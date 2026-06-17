@@ -12,8 +12,8 @@ module.exports = function(passport) {
       async (accessToken, refreshToken, profile, done) => {
         const newUser = {
           googleId: profile.id,
-          username: profile.displayName,
           email: profile.emails[0].value,
+          isVerified: true
         };
 
         try {

@@ -32,17 +32,25 @@ mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('MongoDB Connected');
     
+    // Force drop the old username index to prevent duplicate key errors
+    try {
+      await mongoose.connection.collection('users').dropIndex('username_1');
+    } catch (e) {
+      // Ignore if index doesn't exist
+    }
+
     // Seed Admin User
     try {
-      const adminExists = await User.findOne({ username: 'Admin' });
+      const adminExists = await User.findOne({ email: 'admin@banglex.com' });
       if (!adminExists) {
         const newAdmin = new User({
-          username: 'Admin',
+          email: 'admin@banglex.com',
           password: 'admin123',
-          role: 'admin'
+          role: 'admin',
+          isVerified: true
         });
         await newAdmin.save();
-        console.log('Default Admin user seeded (Admin / admin123)');
+        console.log('Default Admin user seeded (admin@banglex.com / admin123)');
       }
     } catch (err) {
       console.error('Error seeding admin user:', err);

@@ -3,13 +3,17 @@ import { useNavigate, useLocation } from 'react-router-dom';
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
-  const [formData, setFormData] = useState({ username: '', email: '', password: '' });
+  const [isVerifyingSignup, setIsVerifyingSignup] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  
+  const [formData, setFormData] = useState({ email: '', password: '', otp: '', newPassword: '' });
   const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
   
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check for Google Auth callback data in URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const token = params.get('token');
@@ -32,108 +36,213 @@ const LoginSignup = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSignupSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-
-    const url = isLogin 
-      ? 'http://localhost:5000/auth/login' 
-      : 'http://localhost:5000/auth/signup';
-
+    setError(''); setMessage('');
     try {
-      const response = await fetch(url, {
+      const response = await fetch('http://localhost:5000/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(isLogin 
-          ? { username: formData.username, password: formData.password }
-          : { username: formData.username, email: formData.email, password: formData.password }
-        )
+        body: JSON.stringify({ email: formData.email, password: formData.password })
       });
-
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Something went wrong');
-      }
-
-      localStorage.setItem('token', data.token);
       
-      if (data.user.role === 'admin') {
-        navigate('/admin-dashboard');
-      } else {
-        navigate('/user-dashboard');
+      if (!response.ok) {
+        if (data.userExists) {
+          alert('You already have an account! Press OK to go to the login screen.');
+          setIsLogin(true);
+          return;
+        }
+        throw new Error(data.message || 'Signup failed');
       }
-    } catch (err) {
-      setError(err.message);
-    }
+
+      if (data.alreadyExists) {
+        alert('You already have an account! Press OK to go to your dashboard.');
+        localStorage.setItem('token', data.token);
+        if (data.user.role === 'admin') navigate('/admin-dashboard');
+        else navigate('/user-dashboard');
+        return;
+      }
+
+      setMessage(data.message);
+      setIsVerifyingSignup(true);
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleVerifySignupSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setMessage('');
+    try {
+      const response = await fetch('http://localhost:5000/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, otp: formData.otp })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Verification failed');
+      
+      localStorage.setItem('token', data.token);
+      if (data.user.role === 'admin') navigate('/admin-dashboard');
+      else navigate('/user-dashboard');
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setMessage('');
+    try {
+      const response = await fetch('http://localhost:5000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password })
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        if (data.needsVerification) setIsVerifyingSignup(true);
+        throw new Error(data.message || 'Login failed');
+      }
+      
+      localStorage.setItem('token', data.token);
+      if (data.user.role === 'admin') navigate('/admin-dashboard');
+      else navigate('/user-dashboard');
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setMessage('');
+    try {
+      const response = await fetch('http://localhost:5000/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Forgot password failed');
+      setMessage(data.message);
+      setIsForgotPassword(false);
+      setIsResettingPassword(true);
+    } catch (err) { setError(err.message); }
+  };
+
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setError(''); setMessage('');
+    try {
+      const response = await fetch('http://localhost:5000/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, otp: formData.otp, newPassword: formData.newPassword })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Password reset failed');
+      setMessage(data.message);
+      setIsResettingPassword(false);
+      setIsLogin(true);
+      setFormData({ email: '', password: '', otp: '', newPassword: '' });
+    } catch (err) { setError(err.message); }
   };
 
   const handleGoogleLogin = () => {
     window.location.href = 'http://localhost:5000/auth/google';
   };
 
-  return (
-    <div className="auth-container">
-      <div className="glass-card">
-        <h2 className="auth-title">
-          {isLogin ? 'Welcome Back' : 'Create Account'}
-        </h2>
-        <p className="auth-subtitle">
-          {isLogin 
-            ? 'Sign in to your Banglex account to continue' 
-            : 'Join Banglex to explore amazing collections'}
-        </p>
-
-        {error && <div style={{ color: '#ef4444', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>{error}</div>}
-
-        <form onSubmit={handleSubmit}>
+  const renderForm = () => {
+    if (isVerifyingSignup) {
+      return (
+        <form onSubmit={handleVerifySignupSubmit}>
           <div className="form-group">
-            <label className="form-label">Username</label>
-            <input 
-              type="text" 
-              name="username"
-              className="form-input" 
-              placeholder="Enter your username" 
-              value={formData.username}
-              onChange={handleChange}
-              required
-            />
+            <label className="form-label">Enter OTP sent to {formData.email}</label>
+            <input type="text" name="otp" className="form-input" placeholder="6-digit OTP" value={formData.otp} onChange={handleChange} required />
           </div>
-
-          {!isLogin && (
-            <div className="form-group">
-              <label className="form-label">Email</label>
-              <input 
-                type="email" 
-                name="email"
-                className="form-input" 
-                placeholder="Enter your email" 
-                value={formData.email}
-                onChange={handleChange}
-                required
-              />
-            </div>
-          )}
-
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input 
-              type="password" 
-              name="password"
-              className="form-input" 
-              placeholder="Enter your password" 
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
+          <button type="submit" className="btn btn-primary">Verify Email</button>
+          <div className="auth-toggle" style={{ justifyContent: 'center' }}>
+             <span onClick={() => setIsVerifyingSignup(false)}>Back</span>
           </div>
-
-          <button type="submit" className="btn btn-primary">
-            {isLogin ? 'Sign In' : 'Sign Up'}
-          </button>
         </form>
+      );
+    }
 
-        <div className="divider">or continue with</div>
+    if (isForgotPassword) {
+      return (
+        <form onSubmit={handleForgotPasswordSubmit}>
+          <div className="form-group">
+            <label className="form-label">Email</label>
+            <input type="email" name="email" className="form-input" placeholder="Enter your email" value={formData.email} onChange={handleChange} required />
+          </div>
+          <button type="submit" className="btn btn-primary">Send OTP</button>
+          <div className="auth-toggle" style={{ justifyContent: 'center' }}>
+             <span onClick={() => {setIsForgotPassword(false); setIsLogin(true);}}>Back to Login</span>
+          </div>
+        </form>
+      );
+    }
+
+    if (isResettingPassword) {
+      return (
+        <form onSubmit={handleResetPasswordSubmit}>
+          <div className="form-group">
+            <label className="form-label">Enter OTP</label>
+            <input type="text" name="otp" className="form-input" placeholder="6-digit OTP" value={formData.otp} onChange={handleChange} required />
+          </div>
+          <div className="form-group">
+            <label className="form-label">New Password</label>
+            <input type="password" name="newPassword" className="form-input" placeholder="Enter new password" value={formData.newPassword} onChange={handleChange} required />
+          </div>
+          <button type="submit" className="btn btn-primary">Reset Password</button>
+          <div className="auth-toggle" style={{ justifyContent: 'center' }}>
+             <span onClick={() => {setIsResettingPassword(false); setIsLogin(true);}}>Back to Login</span>
+          </div>
+        </form>
+      );
+    }
+
+    return (
+      <form onSubmit={isLogin ? handleLoginSubmit : handleSignupSubmit}>
+        <div className="form-group">
+          <label className="form-label">Email</label>
+          <input 
+            type="email" 
+            name="email"
+            className="form-input" 
+            placeholder="Enter your email" 
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <div className="form-group">
+          <label className="form-label">Password</label>
+          <input 
+            type="password" 
+            name="password"
+            className="form-input" 
+            placeholder="Enter your password" 
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+        </div>
+        <button type="submit" className="btn btn-primary">
+          {isLogin ? 'Sign In' : 'Get Started'}
+        </button>
+
+        {isLogin ? (
+          <div className="auth-toggle">
+            <span style={{ color: 'var(--text-secondary)', fontWeight: 'normal' }} onClick={() => setIsForgotPassword(true)}>Forgot Password?</span>
+            <div>
+              Don't Have an Account? <span className="highlight-red" onClick={() => setIsLogin(false)}>Sign up</span>
+            </div>
+          </div>
+        ) : (
+          <div className="auth-toggle" style={{ justifyContent: 'center' }}>
+            <div>
+              Already Have an Account? <span onClick={() => setIsLogin(true)}>Log in</span>
+            </div>
+          </div>
+        )}
+
+        <div className="divider">or</div>
 
         <button type="button" className="btn btn-google" onClick={handleGoogleLogin}>
           <svg className="google-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -142,15 +251,34 @@ const LoginSignup = () => {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          Google
+          Sign in with Google
         </button>
+      </form>
+    );
+  };
 
-        <div className="auth-toggle">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}
-          <span onClick={() => setIsLogin(!isLogin)}>
-            {isLogin ? 'Sign up' : 'Sign in'}
-          </span>
-        </div>
+  const getTitle = () => {
+    if (isVerifyingSignup) return 'Verify Email';
+    if (isForgotPassword) return 'Forgot Password';
+    if (isResettingPassword) return 'Reset Password';
+    return isLogin ? 'Welcome Back' : 'Get started for free';
+  };
+
+  return (
+    <div className="auth-container">
+      {/* Temporary Logo placed absolutely top-left */}
+      <div className="temp-logo">
+        <span className="temp-logo-icon">P</span>
+        Banglex<span style={{ color: 'var(--primary)' }}>.Ai</span>
+      </div>
+
+      <div className="glass-card">
+        <h2 className="auth-title">{getTitle()}</h2>
+        
+        {error && <div style={{ color: '#ef4444', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>{error}</div>}
+        {message && <div style={{ color: '#10b981', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>{message}</div>}
+
+        {renderForm()}
       </div>
     </div>
   );

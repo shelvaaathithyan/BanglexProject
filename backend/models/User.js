@@ -2,14 +2,9 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    sparse: true,
-    unique: true
-  },
   email: {
     type: String,
-    sparse: true,
+    required: true,
     unique: true
   },
   password: {
@@ -24,6 +19,22 @@ const userSchema = new mongoose.Schema({
     type: String,
     enum: ['user', 'admin'],
     default: 'user'
+  },
+  isVerified: {
+    type: Boolean,
+    default: false
+  },
+  verificationOtp: {
+    type: String
+  },
+  verificationOtpExpiry: {
+    type: Date
+  },
+  resetOtp: {
+    type: String
+  },
+  resetOtpExpiry: {
+    type: Date
   }
 }, { timestamps: true });
 
