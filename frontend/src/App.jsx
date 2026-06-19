@@ -3,6 +3,8 @@ import LoginSignup from './pages/LoginSignup';
 import UserDashboard from './pages/UserDashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import HomePage from './pages/HomePage';
+import CategoryPage from './pages/CategoryPage';
+import ProductDetailPage from './pages/ProductDetailPage';
 import './index.css';
 
 function App() {
@@ -10,6 +12,8 @@ function App() {
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
+        <Route path="/category/:categorySlug" element={<CategoryPage />} />
+        <Route path="/product/:productId" element={<ProductDetailPage />} />
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />

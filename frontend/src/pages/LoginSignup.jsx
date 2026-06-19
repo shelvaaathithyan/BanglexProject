@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import Footer from '../components/Footer';
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -265,21 +266,25 @@ const LoginSignup = () => {
   };
 
   return (
-    <div className="auth-container">
-      {/* Temporary Logo placed absolutely top-left */}
-      <div className="temp-logo">
-        <span className="temp-logo-icon">R</span>
-        RAHA<span style={{ color: 'var(--primary)' }}> Creations</span>
-      </div>
+    <div className="auth-page-wrapper">
+      <div className="auth-container">
+        {/* Brand Logo linked to homepage */}
+        <Link to="/" className="store-logo-link" style={{ textDecoration: 'none' }}>
+          <div className="temp-logo store-logo">
+            RaHa <span className="logo-accent">Creations</span>
+          </div>
+        </Link>
 
-      <div className="glass-card">
-        <h2 className="auth-title">{getTitle()}</h2>
-        
-        {error && <div style={{ color: '#ef4444', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>{error}</div>}
-        {message && <div style={{ color: '#10b981', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>{message}</div>}
+        <div className="glass-card">
+          <h2 className="auth-title">{getTitle()}</h2>
+          
+          {error && <div style={{ color: '#ef4444', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>{error}</div>}
+          {message && <div style={{ color: '#10b981', marginBottom: '1rem', textAlign: 'center', fontSize: '0.9rem' }}>{message}</div>}
 
-        {renderForm()}
+          {renderForm()}
+        </div>
       </div>
+      <Footer />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { User, MapPin, Mail, ShoppingBag } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -11,6 +12,7 @@ const UserDashboard = () => {
   });
   const [isLoading, setIsLoading] = useState(true);
   const [saveStatus, setSaveStatus] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -29,6 +31,9 @@ const UserDashboard = () => {
             lastName: data.lastName || '',
             address: data.address || ''
           });
+          // If first name exists, start in readonly 'Edit Profile' mode.
+          // Otherwise, start in editable 'Save Profile' mode.
+          setIsEditing(!data.firstName);
         }
       } catch (err) {
         console.error(err);
@@ -45,6 +50,13 @@ const UserDashboard = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // If not currently editing, clicking 'Edit Profile' toggles edit mode on
+    if (!isEditing) {
+      setIsEditing(true);
+      return;
+    }
+
     setSaveStatus('Saving...');
     const token = localStorage.getItem('token');
     
@@ -62,6 +74,7 @@ const UserDashboard = () => {
         const updatedUser = await res.json();
         setUser(updatedUser);
         setSaveStatus('Profile updated successfully!');
+        setIsEditing(false); // Switch back to readonly after saving
         window.dispatchEvent(new Event('profileUpdated'));
         setTimeout(() => setSaveStatus(''), 3000);
       } else {
@@ -73,27 +86,13 @@ const UserDashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    window.location.href = '/login';
-  };
-
   return (
     <div className="dashboard-page">
-      {/* Minimal Top Bar instead of full Navbar */}
-      <div className="dashboard-top-bar">
-        <button className="btn-back" onClick={() => window.location.href = '/'}>
-          &larr; Back to Store
-        </button>
-        <button className="btn-logout-small" onClick={handleLogout}>
-          Logout
-        </button>
-      </div>
+      <Navbar />
       
       <main className="dashboard-container">
         <div className="dashboard-hero">
           <h1 className="dashboard-title">Your Dashboard</h1>
-          <p className="dashboard-subtitle">Manage your account and view your details here.</p>
         </div>
 
         {isLoading ? (
@@ -123,6 +122,7 @@ const UserDashboard = () => {
                       value={formData.firstName} 
                       onChange={handleChange} 
                       placeholder="Enter your first name" 
+                      disabled={!isEditing}
                     />
                   </div>
                   <div className="form-group">
@@ -133,6 +133,7 @@ const UserDashboard = () => {
                       value={formData.lastName} 
                       onChange={handleChange} 
                       placeholder="Enter your last name" 
+                      disabled={!isEditing}
                     />
                   </div>
                 </div>
@@ -147,11 +148,14 @@ const UserDashboard = () => {
                       onChange={handleChange} 
                       placeholder="Enter your full shipping address"
                       rows="3"
+                      disabled={!isEditing}
                     ></textarea>
                   </div>
                 </div>
 
-                <button type="submit" className="btn-save-profile">Save Profile</button>
+                <button type="submit" className="btn-save-profile">
+                  {isEditing ? 'Save Profile' : 'Edit Profile'}
+                </button>
                 {saveStatus && <p className="save-status">{saveStatus}</p>}
               </form>
             </section>
@@ -167,6 +171,7 @@ const UserDashboard = () => {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 };
