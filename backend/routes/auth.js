@@ -225,4 +225,28 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// @route   PUT /auth/profile
+// @desc    Update user profile details
+router.put('/profile', async (req, res) => {
+  const token = req.headers.authorization?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token, authorization denied' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const { firstName, lastName, address } = req.body;
+    
+    const user = await User.findByIdAndUpdate(
+      decoded.id,
+      { $set: { firstName, lastName, address } },
+      { new: true }
+    ).select('-password');
+    
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 module.exports = router;

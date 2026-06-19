@@ -268,8 +268,8 @@ const LoginSignup = () => {
     <div className="auth-container">
       {/* Temporary Logo placed absolutely top-left */}
       <div className="temp-logo">
-        <span className="temp-logo-icon">P</span>
-        Banglex<span style={{ color: 'var(--primary)' }}>.Ai</span>
+        <span className="temp-logo-icon">R</span>
+        RAHA<span style={{ color: 'var(--primary)' }}> Creations</span>
       </div>
 
       <div className="glass-card">
