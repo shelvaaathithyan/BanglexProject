@@ -20,6 +20,19 @@ const ProductDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [shareSuccess, setShareSuccess] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+
+  // Load saved state on mount
+  useEffect(() => {
+    if (productId) {
+      const savedItems = JSON.parse(localStorage.getItem('savedItems') || '{}');
+      if (savedItems[productId]) {
+        setIsSaved(true);
+      } else {
+        setIsSaved(false);
+      }
+    }
+  }, [productId]);
 
   // Mock Data
   const mockColors = [
@@ -77,6 +90,19 @@ const ProductDetailPage = () => {
     navigator.clipboard.writeText(window.location.href);
     setShareSuccess(true);
     setTimeout(() => setShareSuccess(false), 2000);
+  };
+
+  const toggleSave = () => {
+    setIsSaved(!isSaved);
+    if (productId) {
+      const savedItems = JSON.parse(localStorage.getItem('savedItems') || '{}');
+      if (!isSaved) {
+        savedItems[productId] = true;
+      } else {
+        delete savedItems[productId];
+      }
+      localStorage.setItem('savedItems', JSON.stringify(savedItems));
+    }
   };
 
   const incrementQty = () => setQuantity(prev => prev + 1);
@@ -257,9 +283,9 @@ const ProductDetailPage = () => {
 
             {/* Actions */}
             <div className="bottom-actions">
-              <button className="save-item-btn">
-                <Heart size={18} />
-                <span>Save Item</span>
+              <button className="save-item-btn" onClick={toggleSave}>
+                <Heart size={18} fill={isSaved ? "#e91e63" : "none"} color={isSaved ? "#e91e63" : "currentColor"} />
+                <span>{isSaved ? "Saved" : "Save Item"}</span>
               </button>
               
               <div className="action-buttons-row">

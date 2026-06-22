@@ -1594,12 +1594,13 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 14px 24px;
+  padding: 12px 16px;
   border-radius: 8px;
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
 }
 
 .btn-add-cart {
@@ -1886,6 +1887,13 @@ body {
   font-family: 'Poppins', sans-serif;
   color: #64748b;
   font-size: 0.95rem;
+}
+
+.cart-empty-state .btn-shop-now {
+  flex: none;
+  margin-top: 1rem;
+  padding: 0.8rem 2rem;
+  width: auto;
 }
 
 .cart-drawer-items {
