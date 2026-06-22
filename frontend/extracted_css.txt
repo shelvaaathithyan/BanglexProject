@@ -1,0 +1,215 @@
+﻿/* --- Recreated Shop by Category Section --- */
+.shop-by-category-section {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 4rem 2rem 2rem 2rem;
+  text-align: center;
+}
+.category-horizontal-card {
+  display: flex;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 20px;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  height: 200px;
+}
+
+.category-horizontal-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.05);
+}
+
+.card-image-container {
+  flex: 0 0 42%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.card-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s;
+}
+
+.category-horizontal-card:hover .card-image {
+  transform: scale(1.05);
+}
+
+.card-details-container {
+  flex: 1;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.card-title {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #0f172a;
+  font-family: 'Poppins', sans-serif;
+  margin: 0 0 0.5rem 0;
+}
+
+.card-description {
+  font-size: 0.85rem;
+  color: #64748b;
+  line-height: 1.4;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.explore-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.explore-link .arrow {
+  transition: transform 0.2s ease;
+}
+
+.explore-link:hover .arrow {
+  transform: translateX(3px);
+}
+
+/* Pink themes for Products category explore buttons */
+.explore-link.link-bangles, .explore-link.link-terracotta {
+  border: 1.5px solid #fee2e2;
+  background-color: transparent;
+  color: var(--primary);
+}
+
+.explore-link.link-bangles:hover, .explore-link.link-terracotta:hover {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
+}
+
+/* Purple themes for Services category explore buttons */
+.explore-link.link-organisers, .explore-link.link-hampers {
+  border: 1.5px solid #f3e8ff;
+  background-color: transparent;
+  color: #8b5cf6;
+}
+
+.explore-link.link-organisers:hover, .explore-link.link-hampers:hover {
+  background-color: #8b5cf6;
+  border-color: #8b5cf6;
+  color: #ffffff;
+}
+
+/* --- Popular Picks Grid Section --- */
+.popular-picks-section {
+  max-width: 1400px;
+  margin: 0 auto 5rem auto;
+  padding: 0 2rem;
+  text-align: center;
+}
+
+.popular-products-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1.5rem;
+}
+
+/* Responsive category and products */
+@media (max-width: 1200px) {
+  .popular-products-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 992px) {
+  .group-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+  
+  .category-horizontal-card {
+    height: 180px;
+  }
+
+  .popular-products-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .category-group-box {
+    padding: 1.5rem;
+  }
+  
+  .category-horizontal-card {
+    height: auto;
+    flex-direction: column;
+  }
+
+  .card-image-container {
+    flex: 0 0 auto;
+    width: 100%;
+    height: 150px;
+  }
+
+  .card-details-container {
+    padding: 1.25rem;
+    gap: 1rem;
+  }
+
+  .popular-products-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .shop-by-category-section, .popular-picks-section {
+    padding: 2rem 1rem;
+  }
+
+  .popular-products-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+  
+  .section-title {
+    font-size: 1.75rem;
+  }
+}
+
+/* Navigation Menu Wrappers */
+.desktop-only-menu-wrapper {
+  display: none;
+}
+@media (min-width: 1024px) {
+  .desktop-only-menu-wrapper {
+    display: flex;
+    gap: 1.25rem;
+    align-items: center;
+  }
+}
+
+.mobile-only-menu-wrapper {
+  display: none;
+}
+@media (max-width: 1023px) {
+  .mobile-only-menu-wrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    gap: 0.5rem;
+  }
+}
+

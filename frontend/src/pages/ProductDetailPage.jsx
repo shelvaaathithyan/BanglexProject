@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { Share2, Plus, Minus } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { mockProducts } from '../utils/mockProducts';
 
 const ProductDetailPage = () => {
   const { productId } = useParams();
@@ -20,7 +21,22 @@ const ProductDetailPage = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch current product details
+        // Handle mock product IDs directly
+        if (productId && productId.startsWith('mock-')) {
+          const productData = mockProducts.find(item => item._id === productId);
+          if (!productData) {
+            throw new Error('Product not found');
+          }
+          setProduct(productData);
+          const filtered = mockProducts
+            .filter(item => item.category === productData.category && item._id !== productId)
+            .slice(0, 4);
+          setRelatedProducts(filtered);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch current product details from API
         const res = await fetch(`http://localhost:5000/products/${productId}`);
         if (!res.ok) {
           throw new Error('Product not found');

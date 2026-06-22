@@ -38,7 +38,7 @@ const seedProductsData = [
     price: 400,
     salePrice: 139,
     isOnSale: true,
-    images: ['https://images.unsplash.com/photo-1611591437281-460bfbe1220a?q=80&w=600&auto=format&fit=crop'],
+    images: ['/thanvi-glass-bangles.jpg'],
     color: 'Maroon',
     stock: 25
   },
@@ -918,3 +918,5 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
+
+app.post('/api/dump', (req, res) => { console.log('--- DOM DUMP ---'); console.log(JSON.stringify(req.body, null, 2)); res.json({ok: true}); });
