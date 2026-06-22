@@ -486,6 +486,34 @@ const Navbar = () => {
                 <button className="icon-btn mobile-search" aria-label="Search" onClick={() => setIsSearchOpen(true)}>
                   <Search size={20} strokeWidth={1.5} />
                 </button>
+                
+                <div className="user-dropdown-container mobile-user">
+                  <button 
+                    className={`icon-btn ${isLoggedIn ? 'active' : ''}`} 
+                    aria-label="User profile" 
+                    onClick={handleUserClick}
+                    style={{ position: 'relative' }}
+                  >
+                    <User size={20} strokeWidth={1.5} color={isLoggedIn && isProfileOpen ? "var(--primary)" : "currentColor"} />
+                    {isLoggedIn && profileIncomplete && (
+                      <span className="gold-dot"></span>
+                    )}
+                  </button>
+                  {isProfileOpen && isLoggedIn && (
+                    <div className="profile-dropdown">
+                      <div className="profile-links">
+                        <button className="profile-item" onClick={() => { setIsProfileOpen(false); navigate('/user-dashboard'); }}>
+                          <User size={16} /> Dashboard
+                        </button>
+                        <div className="profile-divider"></div>
+                        <button className="profile-item logout-text" onClick={handleLogout}>
+                          <LogOut size={16} /> Logout
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
                 <button className="icon-btn mobile-bag" aria-label="Shopping bag" onClick={() => setIsCartOpen(true)} style={{ position: 'relative' }}>
                   <ShoppingBag size={20} strokeWidth={1.5} />
                   {cartItemCount > 0 && (

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Share2, Plus, Minus } from 'lucide-react';
+import { Share2, Plus, Minus, Star, Truck, Heart, ShoppingCart, Zap } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { mockProducts } from '../utils/mockProducts';
@@ -10,24 +10,36 @@ const ProductDetailPage = () => {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [relatedProducts, setRelatedProducts] = useState([]);
+  
+  // Selections
   const [selectedSize, setSelectedSize] = useState('2.4');
+  const [selectedColor, setSelectedColor] = useState('maroon');
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [shareSuccess, setShareSuccess] = useState(false);
+
+  // Mock Data
+  const mockColors = [
+    { id: 'maroon', hex: '#6b112c' },
+    { id: 'green', hex: '#14532d' },
+    { id: 'yellow', hex: '#b45309' }
+  ];
+  const sizes = ['2.2', '2.4', '2.6', '2.8'];
+  const disabledSizes = ['2.8'];
 
   useEffect(() => {
     const fetchProductAndRelated = async () => {
       setLoading(true);
       setError(null);
       try {
-        // Handle mock product IDs directly
         if (productId && productId.startsWith('mock-')) {
           const productData = mockProducts.find(item => item._id === productId);
-          if (!productData) {
-            throw new Error('Product not found');
-          }
+          if (!productData) throw new Error('Product not found');
           setProduct(productData);
+          
           const filtered = mockProducts
             .filter(item => item.category === productData.category && item._id !== productId)
             .slice(0, 4);
@@ -36,19 +48,14 @@ const ProductDetailPage = () => {
           return;
         }
 
-        // Fetch current product details from API
         const res = await fetch(`http://localhost:5000/products/${productId}`);
-        if (!res.ok) {
-          throw new Error('Product not found');
-        }
+        if (!res.ok) throw new Error('Product not found');
         const productData = await res.json();
         setProduct(productData);
 
-        // Fetch related products from the same category
         const relRes = await fetch(`http://localhost:5000/products?category=${encodeURIComponent(productData.category)}`);
         if (relRes.ok) {
           const relData = await relRes.json();
-          // Filter out current product and limit to 4 related products
           const filtered = relData.filter(item => item._id !== productId).slice(0, 4);
           setRelatedProducts(filtered);
         }
@@ -61,9 +68,9 @@ const ProductDetailPage = () => {
     };
 
     fetchProductAndRelated();
-    // Scroll to top when productId changes
     window.scrollTo(0, 0);
-    setQuantity(1); // Reset quantity to 1
+    setQuantity(1);
+    setSelectedImageIndex(0);
   }, [productId]);
 
   const handleShare = () => {
@@ -79,7 +86,7 @@ const ProductDetailPage = () => {
     const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
     const unitPrice = product.isOnSale && product.salePrice ? product.salePrice : product.price;
     const existingIndex = currentCart.findIndex(
-      item => item._id === product._id && item.size === selectedSize
+      item => item._id === product._id && item.size === selectedSize && item.color === selectedColor
     );
     
     if (existingIndex > -1) {
@@ -89,8 +96,9 @@ const ProductDetailPage = () => {
         _id: product._id,
         name: product.name,
         price: unitPrice,
-        image: product.images[0] || 'https://via.placeholder.com/300',
+        image: product.images[selectedImageIndex] || product.images[0] || 'https://via.placeholder.com/300',
         size: selectedSize,
+        color: selectedColor,
         quantity: quantity
       });
     }
@@ -108,10 +116,7 @@ const ProductDetailPage = () => {
     return (
       <div className="product-detail-page">
         <Navbar />
-        <div className="catalog-loading">
-          <div className="spinner"></div>
-          <p>Loading product details...</p>
-        </div>
+        <div className="catalog-loading"><div className="spinner"></div><p>Loading product details...</p></div>
         <Footer />
       </div>
     );
@@ -123,21 +128,27 @@ const ProductDetailPage = () => {
         <Navbar />
         <div className="catalog-error">
           <p>Error: {error || 'Product not found'}</p>
-          <Link to="/" className="back-to-home" style={{ marginTop: '1rem', display: 'inline-block' }}>
-            &larr; Back to Home Page
-          </Link>
+          <Link to="/" className="back-to-home" style={{ marginTop: '1rem', display: 'inline-block' }}>&larr; Back to Home Page</Link>
         </div>
         <Footer />
       </div>
     );
   }
 
+  // Generate a mock array of images if product only has 1, just for the gallery demo
+  const displayImages = product.images.length > 1 ? product.images : [
+    product.images[0] || 'https://via.placeholder.com/600',
+    'https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?auto=format&fit=crop&w=600&q=80',
+    'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=600&q=80'
+  ];
+
   return (
     <div className="product-detail-page">
       <Navbar />
 
       <main className="product-detail-main">
-        {/* Breadcrumb / Back Link */}
+        {/* Breadcrumb */}
         <div className="detail-breadcrumb">
           <Link to="/" className="breadcrumb-link">Home</Link>
           <span className="breadcrumb-separator">/</span>
@@ -148,46 +159,61 @@ const ProductDetailPage = () => {
           <span className="breadcrumb-current">{product.name}</span>
         </div>
 
-        {/* Product Grid Layout */}
-        <div className="product-detail-grid">
-          {/* Left Column: Image */}
-          <div className="product-detail-image-sec">
-            <div className="detail-image-wrapper">
-              <img 
-                src={product.images[0] || 'https://via.placeholder.com/600'} 
-                alt={product.name} 
-                className="detail-product-image"
-              />
+        <div className="product-detail-layout">
+          {/* Left: Image Gallery */}
+          <div className="product-gallery">
+            <div className="thumbnail-list">
+              {displayImages.map((img, idx) => (
+                <button 
+                  key={idx} 
+                  className={`thumbnail-btn ${selectedImageIndex === idx ? 'active' : ''}`}
+                  onClick={() => setSelectedImageIndex(idx)}
+                >
+                  <img src={img} alt={`Thumbnail ${idx}`} />
+                </button>
+              ))}
+            </div>
+            <div className="main-image-container">
+              <img src={displayImages[selectedImageIndex]} alt={product.name} className="main-image" />
             </div>
           </div>
 
-          {/* Right Column: Information */}
-          <div className="product-detail-info-sec">
-            <span className="detail-vendor-category">{product.category} Collection</span>
-            <h2 className="detail-product-title">{product.name}</h2>
-
-            <div className="detail-price-row">
+          {/* Right: Product Details */}
+          <div className="product-info-panel">
+            <h1 className="product-title">{product.name}</h1>
+            
+            <div className="product-price">
               {product.isOnSale && product.salePrice ? (
                 <>
-                  <span className="detail-original-price">Rs. {product.price.toFixed(2)}</span>
-                  <span className="detail-sale-price">Rs. {product.salePrice.toFixed(2)}</span>
-                  <span className="detail-sale-badge">Sale</span>
+                  <span className="price-sale">₹{product.salePrice.toFixed(2)}</span>
+                  <span className="price-original">₹{product.price.toFixed(2)}</span>
                 </>
               ) : (
-                <span className="detail-sale-price">Rs. {product.price.toFixed(2)}</span>
+                <span className="price-sale">₹{product.price.toFixed(2)}</span>
               )}
             </div>
 
-            <span className="detail-shipping-notice">Shipping calculated at checkout.</span>
+            <div className="product-ratings">
+              <div className="stars">
+                {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#f59e0b" color="#f59e0b" />)}
+              </div>
+              <span className="rating-score">4.9</span>
+              <span className="review-count">(128 Reviews)</span>
+            </div>
+
+            <p className="product-description">
+              {product.description || 'Hand-painted traditional terracotta bangles with floral clay motifs. Light weight and perfect for everyday grace.'}
+            </p>
 
             {/* Size Selector */}
-            <div className="detail-selector-group">
-              <span className="selector-label">Size</span>
+            <div className="selector-section">
+              <span className="selector-label"><strong>Size</strong> (Select your size)</span>
               <div className="size-options">
-                {['2.4', '2.6', '2.8'].map((size) => (
+                {sizes.map((size) => (
                   <button 
                     key={size}
-                    className={`size-btn ${selectedSize === size ? 'active' : ''}`}
+                    disabled={disabledSizes.includes(size)}
+                    className={`size-btn ${selectedSize === size ? 'active' : ''} ${disabledSizes.includes(size) ? 'disabled' : ''}`}
                     onClick={() => setSelectedSize(size)}
                   >
                     {size}
@@ -196,79 +222,58 @@ const ProductDetailPage = () => {
               </div>
             </div>
 
-            {/* Quantity Selector */}
-            <div className="detail-selector-group">
-              <span className="selector-label">Quantity</span>
-              <div className="quantity-adjuster">
-                <button className="qty-btn" onClick={decrementQty} aria-label="Decrease quantity">
-                  <Minus size={16} />
-                </button>
-                <span className="qty-number">{quantity}</span>
-                <button className="qty-btn" onClick={incrementQty} aria-label="Increase quantity">
-                  <Plus size={16} />
-                </button>
+            {/* Color Selector */}
+            <div className="selector-section">
+              <span className="selector-label"><strong>Color</strong></span>
+              <div className="color-options">
+                {mockColors.map((color) => (
+                  <button
+                    key={color.id}
+                    className={`color-btn ${selectedColor === color.id ? 'active' : ''}`}
+                    style={{ backgroundColor: color.hex }}
+                    onClick={() => setSelectedColor(color.id)}
+                    aria-label={`Select color ${color.id}`}
+                  />
+                ))}
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="detail-actions">
-              <button className="add-to-cart-btn" onClick={handleAddToCart}>Add to cart</button>
-              <button className="buy-now-btn" onClick={handleBuyNow}>Buy it now</button>
+            {/* Quantity */}
+            <div className="selector-section">
+              <span className="selector-label"><strong>Quantity</strong></span>
+              <div className="quantity-control">
+                <button onClick={decrementQty}><Minus size={16} /></button>
+                <span>{quantity}</span>
+                <button onClick={incrementQty}><Plus size={16} /></button>
+              </div>
             </div>
 
-            {/* Product Description */}
-            <div className="detail-description">
-              <p>{product.description || 'No description available for this handcrafted masterpiece.'}</p>
+            <div className="delivery-info">
+              <Truck size={18} />
+              <span>Estimated Delivery: 2 - 4 Days</span>
             </div>
 
-            {/* Share Link */}
-            <div className="detail-share-container">
-              <button className="share-btn" onClick={handleShare}>
-                <Share2 size={16} />
-                <span>{shareSuccess ? 'Link Copied!' : 'Share'}</span>
+            <hr className="divider-line" />
+
+            {/* Actions */}
+            <div className="bottom-actions">
+              <button className="save-item-btn">
+                <Heart size={18} />
+                <span>Save Item</span>
               </button>
+              
+              <div className="action-buttons-row">
+                <button className="btn-add-cart" onClick={handleAddToCart}>
+                  <ShoppingCart size={18} /> Add to Cart
+                </button>
+                <button className="btn-shop-now" onClick={handleBuyNow}>
+                  <Zap size={18} fill="white" /> Shop Now
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* You May Also Like Section */}
-        {relatedProducts.length > 0 && (
-          <section className="related-products-section">
-            <h3 className="related-section-title">You may also like</h3>
-            <div className="related-products-grid">
-              {relatedProducts.map((relProduct) => (
-                <Link key={relProduct._id} to={`/product/${relProduct._id}`} className="product-card">
-                  <div className="product-image-wrapper">
-                    <img 
-                      src={relProduct.images[0] || 'https://via.placeholder.com/300'} 
-                      alt={relProduct.name} 
-                      className="product-image"
-                    />
-                    {relProduct.isOnSale && (
-                      <span className="product-sale-badge">Sale</span>
-                    )}
-                    {relProduct.color && (
-                      <span className="product-color-badge">{relProduct.color}</span>
-                    )}
-                  </div>
-                  <div className="product-info">
-                    <h4 className="product-name">{relProduct.name}</h4>
-                    <div className="product-price-row">
-                      {relProduct.isOnSale && relProduct.salePrice ? (
-                        <>
-                          <span className="original-price">Rs. {relProduct.price.toFixed(2)}</span>
-                          <span className="sale-price">Rs. {relProduct.salePrice.toFixed(2)}</span>
-                        </>
-                      ) : (
-                        <span className="sale-price">Rs. {relProduct.price.toFixed(2)}</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
       </main>
       <Footer />
     </div>

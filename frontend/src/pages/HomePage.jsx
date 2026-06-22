@@ -1,13 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ShoppingBag, Gift } from 'lucide-react';
+import { ShoppingBag, Gift, Star } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { mockProducts } from '../utils/mockProducts';
+import { Heart, Diamond, Gift as GiftIcon, ArrowRight, ShieldCheck } from 'lucide-react';
+import gsap from 'gsap';
 
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState(mockProducts);
   const [loading, setLoading] = useState(true);
+  const [liked, setLiked] = useState({}); // local liked state
+
+  const heroRef = useRef(null);
+
+  useEffect(() => {
+    // GSAP Animation for Hero Section
+    const ctx = gsap.context(() => {
+      gsap.fromTo('.hero-tag', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.2, ease: 'power3.out' });
+      gsap.fromTo('.hero-title span', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.2, delay: 0.4, ease: 'power3.out' });
+      gsap.fromTo('.hero-title-divider', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.6, ease: 'power3.out' });
+      gsap.fromTo('.hero-desc', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.8, ease: 'power3.out' });
+      gsap.fromTo('.hero-actions .btn', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, delay: 1, ease: 'power3.out' });
+      gsap.fromTo('.hero-features .feature-item', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, delay: 1.2, ease: 'power3.out' });
+    }, heroRef);
+
+    return () => ctx.revert();
+  }, []);
 
   useEffect(() => {
     const fetchPopularProducts = async () => {
@@ -39,9 +58,88 @@ const HomePage = () => {
     fetchPopularProducts();
   }, []);
 
+  const toggleLike = (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setLiked(prev => ({ ...prev, [id]: !prev[id] }));
+    // TODO: Persist liked state if needed
+  };
+
   return (
     <div className="home-page">
       <Navbar />
+
+      {/* Modern Hero Section */}
+      <section className="hero-section" ref={heroRef}>
+        <div className="hero-container">
+          <div className="hero-content">
+            <div className="hero-tag-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem', width: '100%' }}>
+              {/* Mandala Icon */}
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cb8d71" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem' }}>
+                <path d="M12 2v20M2 12h20M12 2a4 4 0 0 0-4 4 4 4 0 0 0 4 4M12 2a4 4 0 0 1 4 4 4 4 0 0 1-4 4M2 12a4 4 0 0 0 4-4 4 4 0 0 0 4 4M2 12a4 4 0 0 1 4 4 4 4 0 0 1-4-4M12 22a4 4 0 0 0-4-4 4 4 0 0 0 4-4M12 22a4 4 0 0 1 4-4 4 4 0 0 1-4-4M22 12a4 4 0 0 0-4-4 4 4 0 0 0-4 4M22 12a4 4 0 0 1-4 4 4 4 0 0 1-4 4" />
+              </svg>
+              
+              <div className="hero-tag" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '1rem', margin: 0 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ea6c65" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22v-9M12 13a4 4 0 0 0-4-4h-3M12 13a4 4 0 0 1 4-4h3M12 9V4M12 4a3 3 0 0 0-3 3v2M12 4a3 3 0 0 1 3 3v2"/></svg>
+                <span style={{ color: '#ea6c65', fontWeight: 600, letterSpacing: '0.1em', fontSize: '0.875rem' }}>HANDCRAFTED WITH LOVE</span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ea6c65" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(180deg)' }}><path d="M12 22v-9M12 13a4 4 0 0 0-4-4h-3M12 13a4 4 0 0 1 4-4h3M12 9V4M12 4a3 3 0 0 0-3 3v2M12 4a3 3 0 0 1 3 3v2"/></svg>
+              </div>
+            </div>
+
+            <h1 className="hero-title" style={{ fontFamily: 'var(--font-secondary)', color: '#0e1f33', textAlign: 'left', lineHeight: 1.2, width: '100%', marginBottom: '0.5rem' }}>
+              <span>Crafted Traditions,</span>
+              <span style={{ display: 'block' }}>Worn <em style={{ color: '#d67953', fontFamily: 'Georgia, serif', fontStyle: 'italic', fontWeight: 'normal' }}>Beautifully</em></span>
+            </h1>
+            
+            <div className="hero-title-divider" style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', width: '100%' }}>
+              <span style={{ height: '1px', backgroundColor: '#d5b272', width: '80px', display: 'inline-block' }}></span>
+              <span style={{ color: '#d5b272', fontSize: '1rem', margin: '0 0.5rem' }}>❖</span>
+              <span style={{ height: '1px', backgroundColor: '#d5b272', width: '30px', display: 'inline-block' }}></span>
+            </div>
+            
+            <p className="hero-desc" style={{ color: '#506e7a', textAlign: 'left', width: '100%' }}>
+              Handcrafted bangles, terracotta jewellery, and personalized creations made to celebrate every moment.
+            </p>
+            
+            <div className="hero-actions" style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1rem', marginBottom: '2.5rem' }}>
+              <Link to="/category/glass-bangles" className="btn btn-dark-hero" style={{ width: '100%', justifyContent: 'center' }}>
+                Popular Picks <ArrowRight size={16} />
+              </Link>
+              <Link to="/about" className="btn btn-outline-hero" style={{ width: '100%', justifyContent: 'center' }}>
+                About Us
+              </Link>
+            </div>
+            
+            <div className="hero-features-new" style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#fef0e7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Heart size={18} color="#e07a5f" />
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#0e1f33', fontWeight: 500, lineHeight: 1.2 }}>Handmade<br/>with love</div>
+                </div>
+                
+                <div style={{ width: '1px', height: '30px', backgroundColor: '#e2d4cb', margin: '0 1rem' }}></div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#fef0e7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e07a5f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/></svg>
+                  </div>
+                  <div style={{ fontSize: '0.8rem', color: '#0e1f33', fontWeight: 500, lineHeight: 1.2 }}>Premium<br/>quality</div>
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
+                <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#fef0e7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <Gift size={18} color="#e07a5f" />
+                </div>
+                <div style={{ fontSize: '0.8rem', color: '#0e1f33', fontWeight: 500, lineHeight: 1.2 }}>Perfect for<br/>every occasion</div>
+              </div>
+            </div>
+          </div>
+          {/* Hero image is now handled by CSS background */}
+        </div>
+      </section>
 
       {/* Shop by Category Section */}
       <section className="shop-by-category-section">
@@ -172,6 +270,10 @@ const HomePage = () => {
                     alt={product.name} 
                     className="product-image"
                   />
+                  {/* Heart icon */}
+                  <div className="heart-btn" onClick={e => toggleLike(e, product._id)}>
+                    <Heart size={18} fill={liked[product._id] ? "#e11d48" : "none"} color={liked[product._id] ? "#e11d48" : "#4b5563"} />
+                  </div>
                   {product.isOnSale && (
                     <span className="product-sale-badge">Sale</span>
                   )}
@@ -184,12 +286,22 @@ const HomePage = () => {
                   <div className="product-price-row">
                     {product.isOnSale && product.salePrice ? (
                       <>
-                        <span className="original-price">Rs. {product.price.toFixed(2)}</span>
-                        <span className="sale-price">Rs. {product.salePrice.toFixed(2)}</span>
+                        <span className="sale-price">₹{product.salePrice.toFixed(2)}</span>
+                        <span className="original-price">₹{product.price.toFixed(2)}</span>
                       </>
                     ) : (
-                      <span className="sale-price">Rs. {product.price.toFixed(2)}</span>
+                      <span className="sale-price">₹{product.price.toFixed(2)}</span>
                     )}
+                  </div>
+                  <div className="product-card-ratings">
+                    <div className="stars">
+                      {[1,2,3,4,5].map(i => <Star key={i} size={12} fill="#f59e0b" color="#f59e0b" />)}
+                    </div>
+                    <span className="review-count" style={{ fontSize: '0.75rem', color: '#6b7280' }}>(112)</span>
+                  </div>
+                  <div className="product-card-actions">
+                    <button className="btn-card btn-card-outline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Add to Cart</button>
+                    <button className="btn-card btn-card-outline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Shop Now</button>
                   </div>
                 </div>
               </Link>

@@ -15,6 +15,11 @@ const userSchema = new mongoose.Schema({
     sparse: true,
     unique: true
   },
+  whatsappNumber: {
+    type: String,
+    sparse: true,
+    unique: true
+  },
   firstName: {
     type: String,
     trim: true

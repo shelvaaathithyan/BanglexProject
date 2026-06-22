@@ -5,6 +5,10 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const { sendEmail } = require('../utils/mailer');
+const twilio = require('twilio');
+
+// Initialize Twilio Client
+const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
 const emailValidator = require('deep-email-validator');
 
 async function checkEmailValidity(email) {
@@ -245,6 +249,75 @@ router.put('/profile', async (req, res) => {
     
     res.json(user);
   } catch (err) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @route   POST /auth/whatsapp/send-otp
+// @desc    Send WhatsApp login OTP
+router.post('/whatsapp/send-otp', async (req, res) => {
+  const { whatsappNumber } = req.body;
+  if (!whatsappNumber) return res.status(400).json({ message: 'WhatsApp number is required' });
+
+  try {
+    let user = await User.findOne({ whatsappNumber });
+    
+    if (!user) {
+      // Create a dummy user for WhatsApp login
+      const dummyEmail = `wa_${whatsappNumber}@banglex.com`;
+      user = new User({ email: dummyEmail, whatsappNumber, role: 'user', isVerified: true });
+    }
+
+    const otp = generateOtp();
+    user.verificationOtp = otp;
+    user.verificationOtpExpiry = Date.now() + 10 * 60 * 1000;
+    await user.save();
+
+    console.log('\n=============================================');
+    console.log(`💬 WHATSAPP OTP FOR ${whatsappNumber}: ${otp}`);
+    console.log('=============================================\n');
+
+    // Send the real WhatsApp message via Twilio
+    try {
+      const message = await twilioClient.messages.create({
+        body: `Welcome to Banglex! Your verification code is: *${otp}*\n\nDo not share this code with anyone.`,
+        from: `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER}`,
+        to: `whatsapp:${whatsappNumber.replace(/\s/g, '')}` // Strip spaces
+      });
+      console.log(`💬 Twilio WhatsApp message sent: ${message.sid}`);
+      res.status(200).json({ message: 'OTP sent to your WhatsApp number.' });
+    } catch (twilioErr) {
+      console.error('Twilio Error:', twilioErr);
+      res.status(500).json({ message: 'Failed to send WhatsApp message. Ensure you have joined the Twilio Sandbox.' });
+    }
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @route   POST /auth/whatsapp/verify
+// @desc    Verify WhatsApp OTP
+router.post('/whatsapp/verify', async (req, res) => {
+  const { whatsappNumber, otp } = req.body;
+  if (!whatsappNumber || !otp) return res.status(400).json({ message: 'WhatsApp number and OTP are required' });
+
+  try {
+    const user = await User.findOne({ whatsappNumber });
+    if (!user) return res.status(400).json({ message: 'User not found' });
+
+    if (user.verificationOtp !== otp || user.verificationOtpExpiry < Date.now()) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    user.verificationOtp = undefined;
+    user.verificationOtpExpiry = undefined;
+    await user.save();
+
+    const token = generateToken(user);
+    res.status(200).json({ token, user: { id: user._id, email: user.email, role: user.role } });
+  } catch (err) {
+    console.error(err);
     res.status(500).json({ message: 'Server Error' });
   }
 });
