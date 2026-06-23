@@ -28,39 +28,15 @@ const AdminDashboard = () => {
     navigate('/login');
   };
 
-  // Mock Data for Charts
-  const revenueData = [
-    { name: 'Jan', value: 10000 },
-    { name: 'Feb', value: 15000 },
-    { name: 'Mar', value: 18000 },
-    { name: 'Apr', value: 24000 },
-    { name: 'May', value: 38420 },
-    { name: 'Jun', value: 42000 },
-    { name: 'Jul', value: 48000 },
-  ];
-
-  const pipelineData = [
-    { name: 'Molding Clay', value: 28, color: '#10b981' },
-    { name: 'Kiln Firing', value: 26, color: '#f59e0b' },
-    { name: 'Artisan Painting', value: 24, color: '#3b82f6' },
-    { name: 'Packing', value: 22, color: '#8b5cf6' },
-    { name: 'Shipped', value: 18, color: '#06b6d4' },
-    { name: 'Delivered', value: 10, color: '#f43f5e' },
-  ];
-
-  const churnData = [
-    { name: 'Low Risk', value: 642, color: '#10b981' },
-    { name: 'Medium Risk', value: 406, color: '#f59e0b' },
-    { name: 'High Risk', value: 198, color: '#ef4444' },
-  ];
-
-  const categoryData = [
-    { name: 'Bangles', amount: '₹65,420', percent: 45, color: '#f43f5e' },
-    { name: 'Terracotta Jewellery', amount: '₹42,180', percent: 29, color: '#f59e0b' },
-    { name: 'Organisers & Decors', amount: '₹18,750', percent: 13, color: '#3b82f6' },
-    { name: 'Gift Hampers', amount: '₹12,890', percent: 9, color: '#8b5cf6' },
-    { name: 'Others', amount: '₹5,230', percent: 4, color: '#10b981' },
-  ];
+  // Data state (empty for now, to be fetched from API later)
+  const [revenueData, setRevenueData] = useState([]);
+  const [churnData, setChurnData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [lowStockAlerts, setLowStockAlerts] = useState([]);
+  const [topProducts, setTopProducts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [paymentOverview, setPaymentOverview] = useState([]);
 
   return (
     <div className="admin-layout">
@@ -93,10 +69,6 @@ const AdminDashboard = () => {
 
           <div className="admin-nav-group">
             <div className="admin-nav-group-title">Operations</div>
-            <button className="admin-nav-item">
-              <div className="admin-nav-item-left"><ShoppingCart size={18} /> Orders Pipeline</div>
-              <span className="admin-nav-badge">6</span>
-            </button>
             <button className="admin-nav-item"><div className="admin-nav-item-left"><CreditCard size={18} /> Payments Ledger</div></button>
             <button className="admin-nav-item"><div className="admin-nav-item-left"><Archive size={18} /> Inventory Control</div></button>
           </div>
@@ -150,20 +122,9 @@ const AdminDashboard = () => {
               <div className="admin-notification-badge">5</div>
             </div>
 
-            <div className="admin-server-status">
-              <div style={{ background: '#dcfce7', color: '#16a34a', borderRadius: '50%', padding: '4px' }}>
-                <CheckCircle size={12} />
-              </div>
-              <div>
-                <div style={{ fontWeight: 600, color: '#0f172a' }}>Server Status</div>
-                <div style={{ color: '#16a34a' }}>Healthy</div>
-              </div>
-            </div>
-
             <div className="admin-profile">
-              <img src="https://i.pravatar.cc/150?u=admin" alt="Admin" />
               <div className="admin-profile-info">
-                <span className="admin-profile-name">Ananya R.</span>
+                <span className="admin-profile-name">Admin</span>
                 <span className="admin-profile-role">Super Admin</span>
               </div>
             </div>
@@ -176,45 +137,33 @@ const AdminDashboard = () => {
           {/* Top Metrics Row */}
           <div className="admin-metrics-grid">
             <div className="admin-card admin-metric-card">
-              <div className="admin-metric-icon" style={{ color: '#f43f5e', background: '#ffe4e6' }}><ShoppingBag size={20} /></div>
               <div className="admin-card-title">Today's Orders</div>
-              <div className="admin-metric-value">28</div>
-              <div className="admin-metric-trend trend-up"><TrendingUp size={12} /> 12% from yesterday</div>
+              <div className="admin-metric-value">0</div>
+              <div className="admin-metric-trend trend-neutral">0% from yesterday</div>
             </div>
             
             <div className="admin-card admin-metric-card">
-              <div className="admin-metric-icon" style={{ color: '#8b5cf6', background: '#ede9fe' }}>₹</div>
               <div className="admin-card-title">Revenue Today</div>
-              <div className="admin-metric-value">₹18,250</div>
-              <div className="admin-metric-trend trend-up"><TrendingUp size={12} /> 15.6% from yesterday</div>
+              <div className="admin-metric-value">₹0</div>
+              <div className="admin-metric-trend trend-neutral">0% from yesterday</div>
             </div>
 
             <div className="admin-card admin-metric-card">
-              <div className="admin-metric-icon" style={{ color: '#f59e0b', background: '#fef3c7' }}><Archive size={20} /></div>
               <div className="admin-card-title">Pending Orders</div>
-              <div className="admin-metric-value">6</div>
+              <div className="admin-metric-value">0</div>
               <div className="admin-metric-trend trend-neutral">View all pending</div>
             </div>
 
             <div className="admin-card admin-metric-card">
-              <div className="admin-metric-icon" style={{ color: '#10b981', background: '#d1fae5' }}><Users size={20} /></div>
               <div className="admin-card-title">Customers</div>
-              <div className="admin-metric-value">1,246</div>
-              <div className="admin-metric-trend trend-up"><TrendingUp size={12} /> 8.4% this month</div>
+              <div className="admin-metric-value">0</div>
+              <div className="admin-metric-trend trend-neutral">0% this month</div>
             </div>
 
             <div className="admin-card admin-metric-card">
-              <div className="admin-metric-icon" style={{ color: '#ef4444', background: '#fee2e2' }}><Package size={20} /></div>
               <div className="admin-card-title">Low Stock Alerts</div>
-              <div className="admin-metric-value">12</div>
+              <div className="admin-metric-value">0</div>
               <div className="admin-metric-trend trend-down">View all alerts</div>
-            </div>
-
-            <div className="admin-card admin-metric-card">
-              <div className="admin-metric-icon" style={{ color: '#10b981', background: '#d1fae5' }}><CheckCircle size={20} /></div>
-              <div className="admin-card-title">Server Health</div>
-              <div className="admin-metric-value" style={{ color: '#10b981' }}>Healthy</div>
-              <div className="admin-metric-trend" style={{ color: '#64748b' }}>All systems running</div>
             </div>
           </div>
 
@@ -241,39 +190,6 @@ const AdminDashboard = () => {
               </div>
             </div>
 
-            {/* Pipeline Donut */}
-            <div className="admin-card">
-              <div className="admin-card-header">
-                <div className="admin-card-title">Orders Pipeline Overview</div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', height: '100%' }}>
-                <div style={{ width: '50%', height: '200px', position: 'relative' }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                      <Pie data={pipelineData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} stroke="none" dataKey="value">
-                        {pipelineData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={3} />)}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>128</div>
-                    <div style={{ fontSize: '0.6rem', color: '#64748b' }}>Total Orders</div>
-                  </div>
-                </div>
-                <div style={{ width: '50%', paddingLeft: '1rem' }}>
-                  {pipelineData.map((item, idx) => (
-                    <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.75rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <div style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }}></div>
-                        <span style={{ color: '#1e293b', fontWeight: 500 }}>{item.name}</span>
-                      </div>
-                      <div style={{ color: '#64748b' }}>{item.value} <span style={{ fontSize: '0.65rem' }}>({((item.value/128)*100).toFixed(1)}%)</span></div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
             {/* Sales by Category Progress Bars */}
             <div className="admin-card">
               <div className="admin-card-header">
@@ -283,6 +199,7 @@ const AdminDashboard = () => {
                 </select>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                {categoryData.length === 0 && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>No data available</div>}
                 {categoryData.map((cat, idx) => (
                   <div key={idx}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '0.2rem' }}>
@@ -319,13 +236,12 @@ const AdminDashboard = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
-                    { id: 'RC2025-00129', name: 'Ananya R.', items: 3, amt: '₹1,196.00', status: 'Kiln Firing', color: '#f59e0b', bg: '#fef3c7', date: '20 May 2025' },
-                    { id: 'RC2025-00128', name: 'Deepavali K.', items: 2, amt: '₹749.00', status: 'Molding Clay', color: '#10b981', bg: '#d1fae5', date: '20 May 2025' },
-                    { id: 'RC2025-00127', name: 'Priya S.', items: 4, amt: '₹2,299.00', status: 'Artisan Painting', color: '#3b82f6', bg: '#dbeafe', date: '19 May 2025' },
-                    { id: 'RC2025-00126', name: 'Kavya M.', items: 1, amt: '₹399.00', status: 'Packing', color: '#8b5cf6', bg: '#ede9fe', date: '19 May 2025' },
-                    { id: 'RC2025-00125', name: 'Meera V.', items: 2, amt: '₹598.00', status: 'Shipped', color: '#06b6d4', bg: '#cffafe', date: '18 May 2025' },
-                  ].map((order, idx) => (
+                  {recentOrders.length === 0 && (
+                    <tr>
+                      <td colSpan="7" style={{ textAlign: 'center', color: '#94a3b8' }}>No recent orders</td>
+                    </tr>
+                  )}
+                  {recentOrders.map((order, idx) => (
                     <tr key={idx}>
                       <td style={{ fontWeight: 600 }}>{order.id}</td>
                       <td>
@@ -356,12 +272,8 @@ const AdminDashboard = () => {
                 <span className="view-all-link">View All</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                {[
-                  { name: 'Terracotta Floral Bangles', sub: 'Size 2.4', left: 3, reorder: 10, img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=100&q=80' },
-                  { name: 'Terracotta Necklace Set', sub: 'Premium', left: 2, reorder: 8, img: 'https://images.unsplash.com/photo-1599643478514-4a4204b41b8b?w=100&q=80' },
-                  { name: 'Bangle Organizer Box', sub: 'Wooden', left: 4, reorder: 15, img: 'https://images.unsplash.com/photo-1606760227091-3dd870d97f1d?w=100&q=80' },
-                  { name: 'Decorative Gift Tray', sub: 'Terracotta', left: 5, reorder: 12, img: 'https://images.unsplash.com/photo-1615486171448-4fb62c2f6d76?w=100&q=80' },
-                ].map((item, idx) => (
+                {lowStockAlerts.length === 0 && <div style={{ fontSize: '0.75rem', color: '#64748b', padding: '1rem 0' }}>No low stock alerts</div>}
+                {lowStockAlerts.map((item, idx) => (
                   <div className="admin-list-item" key={idx}>
                     <div className="admin-product-cell">
                       <img src={item.img} alt={item.name} />
@@ -394,11 +306,8 @@ const AdminDashboard = () => {
                 <select className="admin-dropdown"><option>This Month</option></select>
               </div>
               <div>
-                {[
-                  { name: 'Terracotta Floral Bangles', sold: '245 Sold', price: '₹399.00', img: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?w=100&q=80', rank: 1 },
-                  { name: 'Beaded Terracotta Set', sold: '189 Sold', price: '₹1,299.00', img: 'https://images.unsplash.com/photo-1599643478514-4a4204b41b8b?w=100&q=80', rank: 2 },
-                  { name: 'Terracotta Earrings', sold: '156 Sold', price: '₹149.00', img: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=100&q=80', rank: 3 },
-                ].map((item, idx) => (
+                {topProducts.length === 0 && <div style={{ fontSize: '0.75rem', color: '#64748b', padding: '1rem 0' }}>No products sold yet</div>}
+                {topProducts.map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.75rem 0', borderBottom: idx < 2 ? '1px solid #f1f5f9' : 'none' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <div style={{ width: 20, height: 20, borderRadius: '50%', background: item.rank === 1 ? '#f59e0b' : item.rank === 2 ? '#94a3b8' : '#cd7f32', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', fontWeight: 700 }}>{item.rank}</div>
@@ -430,12 +339,13 @@ const AdminDashboard = () => {
                     </PieChart>
                   </ResponsiveContainer>
                   <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>18%</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>0%</div>
                     <div style={{ fontSize: '0.5rem', color: '#64748b' }}>Active Churn Rate</div>
                   </div>
                 </div>
                 <div style={{ width: '55%', paddingLeft: '0.5rem' }}>
                   <div style={{ fontSize: '0.65rem', fontWeight: 600, color: '#64748b', marginBottom: '0.5rem' }}>RISK COHORTS</div>
+                  {churnData.length === 0 && <div style={{ fontSize: '0.65rem', color: '#64748b' }}>No data available</div>}
                   {churnData.map((item, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem', fontSize: '0.7rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -447,8 +357,8 @@ const AdminDashboard = () => {
                   ))}
                 </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.7rem', color: '#10b981', fontWeight: 500, marginTop: '0.5rem' }}>
-                <TrendingDown size={12} /> 3% from last 90 days
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.7rem', color: '#64748b', fontWeight: 500, marginTop: '0.5rem' }}>
+                0% from last 90 days
               </div>
               <button style={{ width: '100%', padding: '0.5rem', background: 'transparent', border: '1px solid #f43f5e', color: '#f43f5e', borderRadius: '6px', fontWeight: 600, fontSize: '0.75rem', marginTop: '1rem', cursor: 'pointer' }}>
                 Trigger Re-engagement Campaign
@@ -462,41 +372,16 @@ const AdminDashboard = () => {
                 <span className="view-all-link">View All</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <div style={{ color: '#3b82f6', background: '#dbeafe', padding: '0.3rem', borderRadius: '50%' }}><ShoppingBag size={12} /></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#0f172a', fontWeight: 500 }}>New order RC2025-00129 received</div>
+                {notifications.length === 0 && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>No new notifications</div>}
+                {notifications.map((notif, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: '#3b82f6', background: '#dbeafe', padding: '0.3rem', borderRadius: '50%' }}><Bell size={12} /></div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: '0.75rem', color: '#0f172a', fontWeight: 500 }}>{notif.msg}</div>
+                    </div>
+                    <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>{notif.time}</div>
                   </div>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>2 mins ago</div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <div style={{ color: '#f43f5e', background: '#ffe4e6', padding: '0.3rem', borderRadius: '50%' }}><CreditCard size={12} /></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#0f172a', fontWeight: 500 }}>Payment received from Ananya R.</div>
-                  </div>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>15 mins ago</div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <div style={{ color: '#f59e0b', background: '#fef3c7', padding: '0.3rem', borderRadius: '50%' }}><Archive size={12} /></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#0f172a', fontWeight: 500 }}>Low stock alert for 3 products</div>
-                  </div>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>32 mins ago</div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <div style={{ color: '#8b5cf6', background: '#ede9fe', padding: '0.3rem', borderRadius: '50%' }}><Star size={12} /></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#0f172a', fontWeight: 500 }}>New review submitted for Bangles</div>
-                  </div>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>1 hour ago</div>
-                </div>
-                <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'flex-start' }}>
-                  <div style={{ color: '#10b981', background: '#d1fae5', padding: '0.3rem', borderRadius: '50%' }}><Radio size={12} /></div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '0.75rem', color: '#0f172a', fontWeight: 500 }}>WhatsApp campaign sent successfully</div>
-                  </div>
-                  <div style={{ fontSize: '0.65rem', color: '#94a3b8' }}>2 hours ago</div>
-                </div>
+                ))}
               </div>
             </div>
 
@@ -507,12 +392,8 @@ const AdminDashboard = () => {
                 <select className="admin-dropdown"><option>This Month</option></select>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem', marginTop: '0.5rem' }}>
-                {[
-                  { name: 'UPI Payments', amt: '₹32,650', percent: '64%', icon: <ArrowUpRight size={14} />, color: '#10b981', bg: '#d1fae5' },
-                  { name: 'COD Payments', amt: '₹12,890', percent: '25%', icon: <Package size={14} />, color: '#f59e0b', bg: '#fef3c7' },
-                  { name: 'Card Payments', amt: '₹4,780', percent: '9%', icon: <CreditCard size={14} />, color: '#3b82f6', bg: '#dbeafe' },
-                  { name: 'Wallet Payments', amt: '₹1,230', percent: '2%', icon: <ShoppingBag size={14} />, color: '#f43f5e', bg: '#ffe4e6' },
-                ].map((item, idx) => (
+                {paymentOverview.length === 0 && <div style={{ fontSize: '0.75rem', color: '#64748b' }}>No payment data</div>}
+                {paymentOverview.map((item, idx) => (
                   <div key={idx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                       <div style={{ padding: '0.4rem', borderRadius: '6px', color: item.color, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
