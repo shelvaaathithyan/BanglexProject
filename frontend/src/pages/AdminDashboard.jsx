@@ -60,6 +60,71 @@ const AdminDashboard = () => {
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [productFilterCategory, setProductFilterCategory] = useState('All Categories');
 
+  // Add Product Modal State
+  const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [newProductForm, setNewProductForm] = useState({
+    name: '',
+    description: '',
+    category: '',
+    price: '',
+    stock: '',
+    color: '',
+    image: null
+  });
+
+  const handleProductInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewProductForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleProductFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setNewProductForm(prev => ({ ...prev, image: e.target.files[0] }));
+    }
+  };
+
+  const handleAddProductSubmit = async (e) => {
+    e.preventDefault();
+    if (!newProductForm.name || !newProductForm.category || !newProductForm.price || !newProductForm.image) {
+      alert("Name, Category, Price, and Image are required.");
+      return;
+    }
+    
+    setIsAddingProduct(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', newProductForm.name);
+      formData.append('description', newProductForm.description);
+      formData.append('category', newProductForm.category);
+      formData.append('price', newProductForm.price);
+      formData.append('stock', newProductForm.stock);
+      formData.append('color', newProductForm.color);
+      formData.append('image', newProductForm.image);
+
+      const res = await fetch('http://localhost:5000/products', {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        const savedProduct = await res.json();
+        setAllProducts(prev => [savedProduct, ...prev]);
+        setIsAddProductModalOpen(false);
+        setNewProductForm({ name: '', description: '', category: '', price: '', stock: '', color: '', image: null });
+      } else {
+        const errorData = await res.json();
+        alert(errorData.message || 'Failed to add product');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error connecting to server.');
+    } finally {
+      setIsAddingProduct(false);
+    }
+  };
+
+
   useEffect(() => {
     const fetchProducts = async () => {
       try {
@@ -483,7 +548,10 @@ const AdminDashboard = () => {
             <div className="admin-tab-view">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a' }}>Products Management</h2>
-                <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                <button 
+                  onClick={() => setIsAddProductModalOpen(true)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
+                >
                   <Plus size={18} /> Add New Product
                 </button>
               </div>
@@ -646,6 +714,69 @@ const AdminDashboard = () => {
 
         </div>
       </div>
+
+      {/* Add Product Modal */}
+      {isAddProductModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#0f172a' }}>Add New Product</h3>
+              <button onClick={() => setIsAddProductModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem', color: '#64748b' }}>&times;</button>
+            </div>
+            
+            <form onSubmit={handleAddProductSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Product Name *</label>
+                <input type="text" name="name" value={newProductForm.name} onChange={handleProductInputChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit' }} />
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Description</label>
+                <textarea name="description" value={newProductForm.description} onChange={handleProductInputChange} rows="3" style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit' }} />
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Category *</label>
+                  <input list="category-options" name="category" value={newProductForm.category} onChange={handleProductInputChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit' }} />
+                  <datalist id="category-options">
+                    {uniqueProductCategories.filter(c => c !== 'All Categories').map(cat => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Price (₹) *</label>
+                  <input type="number" name="price" value={newProductForm.price} onChange={handleProductInputChange} required min="0" style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit' }} />
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Stock Quantity</label>
+                  <input type="number" name="stock" value={newProductForm.stock} onChange={handleProductInputChange} min="0" style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit' }} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Color</label>
+                  <input type="text" name="color" value={newProductForm.color} onChange={handleProductInputChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit' }} />
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Product Image *</label>
+                <input type="file" accept="image/*" onChange={handleProductFileChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px dashed #cbd5e1', fontSize: '0.875rem', cursor: 'pointer' }} />
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setIsAddProductModalOpen(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={isAddingProduct} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: isAddingProduct ? '#f43f5e80' : '#e11d48', color: 'white', fontWeight: 600, cursor: isAddingProduct ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  {isAddingProduct ? 'Uploading...' : 'Save Product'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
