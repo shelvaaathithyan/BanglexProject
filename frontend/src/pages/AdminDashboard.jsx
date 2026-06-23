@@ -5,12 +5,29 @@ import {
   Archive, Users, Tag, Star, Radio, BarChart2, UsersRound, 
   Settings, FileText, Search, ExternalLink, Bell, CheckCircle, 
   ShoppingBag, HelpCircle, TrendingUp, TrendingDown, ArrowUpRight,
-  ChevronRight, Heart
+  ChevronRight, Heart, Plus, Edit, Trash2, MoreVertical, Filter
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
+import { mockProducts } from '../utils/mockProducts';
+
+const mockCategories = [
+  { id: 1, name: 'Glass Bangles', desc: 'Traditional and designer glass bangles', products: 45, status: 'Active' },
+  { id: 2, name: 'Jewellery Set', desc: 'Handcrafted terracotta necklaces and earrings', products: 12, status: 'Active' },
+  { id: 3, name: 'Jumkas', desc: 'Beautiful handpainted temple jumkas', products: 28, status: 'Active' },
+  { id: 4, name: 'Studs', desc: 'Daily wear aesthetic clay studs', products: 15, status: 'Active' },
+  { id: 5, name: 'Bridal Set', desc: 'Grand heavy terracotta bridal jewellery', products: 8, status: 'Active' },
+  { id: 6, name: 'Kids wear', desc: 'Lightweight clay jewellery for children', products: 20, status: 'Active' },
+  { id: 7, name: 'Combos', desc: 'Mix and match bangle combos', products: 18, status: 'Active' }
+];
+
+const mockServices = [
+  { id: 1, name: 'Organisers & Decors', duration: 'N/A', price: '₹350 - ₹1200', bookings: 145 },
+  { id: 2, name: 'Gift Hampers', duration: 'Custom', price: '₹999 - ₹2500', bookings: 82 },
+  { id: 3, name: 'Design Studio', duration: 'Consultation', price: '₹500', bookings: 28 }
+];
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -38,6 +55,47 @@ const AdminDashboard = () => {
   const [notifications, setNotifications] = useState([]);
   const [paymentOverview, setPaymentOverview] = useState([]);
 
+  // Products Table State
+  const [allProducts, setAllProducts] = useState(mockProducts);
+  const [productSearchQuery, setProductSearchQuery] = useState('');
+  const [productFilterCategory, setProductFilterCategory] = useState('All Categories');
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/products');
+        if (res.ok) {
+          const data = await res.json();
+          const combined = [...data, ...mockProducts];
+          const unique = [];
+          const map = new Map();
+          for (const item of combined) {
+            if(!map.has(item._id)){
+               map.set(item._id, true);
+               unique.push(item);
+            }
+          }
+          setAllProducts(unique);
+        }
+      } catch (err) {
+        console.error('Failed to fetch products for admin panel:', err);
+      }
+    };
+    fetchProducts();
+  }, []);
+
+  const filteredProducts = allProducts.filter(product => {
+    const nameStr = product.name ? product.name.toLowerCase() : '';
+    const idStr = product._id ? product._id.toString().toLowerCase() : '';
+    
+    const matchesSearch = nameStr.includes(productSearchQuery.toLowerCase()) || 
+                          idStr.includes(productSearchQuery.toLowerCase());
+    const matchesFilter = productFilterCategory === 'All Categories' || product.category === productFilterCategory;
+    return matchesSearch && matchesFilter;
+  });
+
+  const uniqueProductCategories = ['All Categories', ...new Set(allProducts.map(p => p.category).filter(Boolean))];
+
   return (
     <div className="admin-layout">
       {/* Sidebar */}
@@ -62,9 +120,15 @@ const AdminDashboard = () => {
 
           <div className="admin-nav-group">
             <div className="admin-nav-group-title">Catalog</div>
-            <button className="admin-nav-item"><div className="admin-nav-item-left"><Package size={18} /> Products</div> <ChevronRight /></button>
-            <button className="admin-nav-item"><div className="admin-nav-item-left"><FolderOpen size={18} /> Categories</div> <ChevronRight /></button>
-            <button className="admin-nav-item"><div className="admin-nav-item-left"><Layers size={18} /> Services</div> <ChevronRight /></button>
+            <button className={`admin-nav-item ${activeTab === 'products' ? 'active' : ''}`} onClick={() => setActiveTab('products')} style={{ background: activeTab === 'products' ? '#e11d48' : 'transparent', color: activeTab === 'products' ? 'white' : '#94a3b8' }}>
+              <div className="admin-nav-item-left"><Package size={18} /> Products</div> <ChevronRight />
+            </button>
+            <button className={`admin-nav-item ${activeTab === 'categories' ? 'active' : ''}`} onClick={() => setActiveTab('categories')} style={{ background: activeTab === 'categories' ? '#e11d48' : 'transparent', color: activeTab === 'categories' ? 'white' : '#94a3b8' }}>
+              <div className="admin-nav-item-left"><FolderOpen size={18} /> Categories</div> <ChevronRight />
+            </button>
+            <button className={`admin-nav-item ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')} style={{ background: activeTab === 'services' ? '#e11d48' : 'transparent', color: activeTab === 'services' ? 'white' : '#94a3b8' }}>
+              <div className="admin-nav-item-left"><Layers size={18} /> Services</div> <ChevronRight />
+            </button>
           </div>
 
           <div className="admin-nav-group">
@@ -133,8 +197,9 @@ const AdminDashboard = () => {
 
         {/* Content Scroll Area */}
         <div className="admin-content-scroll">
-          
-          {/* Top Metrics Row */}
+          {activeTab === 'dashboard' && (
+            <>
+              {/* Top Metrics Row */}
           <div className="admin-metrics-grid">
             <div className="admin-card admin-metric-card">
               <div className="admin-card-title">Today's Orders</div>
@@ -411,6 +476,169 @@ const AdminDashboard = () => {
             </div>
 
           </div>
+          </>
+          )}
+
+          {activeTab === 'products' && (
+            <div className="admin-tab-view">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a' }}>Products Management</h2>
+                <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Plus size={18} /> Add New Product
+                </button>
+              </div>
+              <div className="admin-card" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem' }}>
+                  <div className="admin-search" style={{ width: '400px' }}>
+                    <Search size={16} color="#94a3b8" />
+                    <input 
+                      type="text" 
+                      placeholder="Search products by name or ID..." 
+                      value={productSearchQuery}
+                      onChange={(e) => setProductSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <select 
+                    style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'white', border: '1px solid #e2e8f0', padding: '0.5rem 1rem', borderRadius: '6px', color: '#64748b', cursor: 'pointer', outline: 'none', fontFamily: 'inherit', fontSize: '0.875rem' }}
+                    value={productFilterCategory}
+                    onChange={(e) => setProductFilterCategory(e.target.value)}
+                  >
+                    {uniqueProductCategories.map(cat => (
+                      <option key={cat} value={cat}>{cat}</option>
+                    ))}
+                  </select>
+                </div>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Product</th>
+                      <th>Category</th>
+                      <th>Price</th>
+                      <th>Stock</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredProducts.length === 0 ? (
+                      <tr><td colSpan="6" style={{ textAlign: 'center', color: '#94a3b8', padding: '3rem 0' }}>No products found matching your search.</td></tr>
+                    ) : (
+                      filteredProducts.map((product, idx) => (
+                      <tr key={idx}>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <img src={product.images[0]} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
+                            <div>
+                              <div style={{ fontWeight: 500, color: '#0f172a' }}>{product.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{product._id}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>{product.category}</td>
+                        <td style={{ fontWeight: 500 }}>₹{product.price}</td>
+                        <td>
+                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: product.stock > 15 ? '#dcfce7' : '#fef08a', color: product.stock > 15 ? '#16a34a' : '#a16207', fontWeight: 600 }}>
+                            {product.stock} in stock
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: '#dcfce7', color: '#16a34a', fontWeight: 600 }}>Active</span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    )))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'categories' && (
+            <div className="admin-tab-view">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a' }}>Categories Management</h2>
+                <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Plus size={18} /> Add Category
+                </button>
+              </div>
+              <div className="admin-card" style={{ padding: '1.5rem' }}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Category Name</th>
+                      <th>Description</th>
+                      <th>Total Products</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockCategories.map((cat, idx) => (
+                      <tr key={idx}>
+                        <td style={{ fontWeight: 500, color: '#0f172a' }}>{cat.name}</td>
+                        <td style={{ color: '#64748b' }}>{cat.desc}</td>
+                        <td style={{ fontWeight: 500 }}>{cat.products} items</td>
+                        <td>
+                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: cat.status === 'Active' ? '#dcfce7' : '#f1f5f9', color: cat.status === 'Active' ? '#16a34a' : '#64748b', fontWeight: 600 }}>{cat.status}</span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'services' && (
+            <div className="admin-tab-view">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a' }}>Services Management</h2>
+                <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Plus size={18} /> Add Service
+                </button>
+              </div>
+              <div className="admin-card" style={{ padding: '1.5rem' }}>
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Service Name</th>
+                      <th>Duration</th>
+                      <th>Price</th>
+                      <th>Bookings</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockServices.map((srv, idx) => (
+                      <tr key={idx}>
+                        <td style={{ fontWeight: 500, color: '#0f172a' }}>{srv.name}</td>
+                        <td style={{ color: '#64748b' }}>{srv.duration}</td>
+                        <td style={{ fontWeight: 500 }}>{srv.price}</td>
+                        <td style={{ fontWeight: 500 }}>{srv.bookings} completed</td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
           <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem', marginTop: '1rem' }}>
             © 2025 RaHa Creations Admin Panel. All rights reserved. <span style={{ float: 'right' }}>Made with <Heart size={12} color="#f43f5e" fill="#f43f5e" style={{ display: 'inline', verticalAlign: 'middle' }} /> for handcrafted love</span>
