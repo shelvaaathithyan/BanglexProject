@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Star, Heart } from 'lucide-react';
+import gsap from 'gsap';
 
 const categorySlugMapping = {
   'glass-bangles': 'Glass Bangles',
@@ -78,6 +79,97 @@ const CategoryPage = () => {
     // TODO: Persist liked items to user profile on backend
   };
 
+  const handleAddToCart = (e, product) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const card = e.target.closest('.product-card');
+    if (!card) return;
+    
+    const imgElement = card.querySelector('.product-image');
+    if (!imgElement) return;
+    
+    // Find the visible cart icon
+    const cartIcons = document.querySelectorAll('[aria-label="Shopping bag"]');
+    let targetCartIcon = null;
+    for (const icon of cartIcons) {
+      const rect = icon.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        targetCartIcon = icon;
+        break;
+      }
+    }
+    
+    if (!targetCartIcon) return;
+    
+    const imgRect = imgElement.getBoundingClientRect();
+    const cartRect = targetCartIcon.getBoundingClientRect();
+    
+    const clone = imgElement.cloneNode(true);
+    
+    Object.assign(clone.style, {
+      position: 'fixed',
+      top: `${imgRect.top}px`,
+      left: `${imgRect.left}px`,
+      width: `${imgRect.width}px`,
+      height: `${imgRect.height}px`,
+      objectFit: 'cover',
+      borderRadius: window.getComputedStyle(imgElement).borderRadius,
+      zIndex: '9999',
+      pointerEvents: 'none',
+      boxShadow: '0 10px 25px rgba(0,0,0,0.2)'
+    });
+    
+    document.body.appendChild(clone);
+    
+    gsap.to(clone, {
+      top: cartRect.top + (cartRect.height / 2) - 10,
+      left: cartRect.left + (cartRect.width / 2) - 10,
+      width: 20,
+      height: 20,
+      opacity: 0.5,
+      duration: 0.8,
+      ease: "power2.inOut",
+      onComplete: () => {
+        clone.remove();
+        
+        // Update actual cart state
+        const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
+        const unitPrice = product.isOnSale && product.salePrice ? product.salePrice : product.price;
+        const selectedSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'Free Size';
+        const selectedColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Default';
+        
+        const existingIndex = currentCart.findIndex(
+          item => item._id === product._id && item.size === selectedSize && item.color === selectedColor
+        );
+        
+        if (existingIndex > -1) {
+          currentCart[existingIndex].quantity += 1;
+        } else {
+          currentCart.push({
+            _id: product._id,
+            name: product.name,
+            price: unitPrice,
+            image: product.images[0] || 'https://via.placeholder.com/300',
+            size: selectedSize,
+            color: selectedColor,
+            quantity: 1
+          });
+        }
+        
+        localStorage.setItem('cart', JSON.stringify(currentCart));
+        window.dispatchEvent(new Event('cartUpdated'));
+
+        gsap.to(targetCartIcon, {
+          scale: 1.2,
+          duration: 0.1,
+          yoyo: true,
+          repeat: 1
+        });
+      }
+    });
+  };
+
   return (
     <div className="category-detail-page">
       <Navbar />
@@ -139,7 +231,7 @@ const CategoryPage = () => {
                     <span className="review-count" style={{ fontSize: '0.75rem', color: '#6b7280' }}>(112)</span>
                   </div>
                   <div className="product-card-actions">
-                    <button className="btn-card btn-card-outline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Add to Cart</button>
+                    <button className="btn-card btn-card-outline" onClick={(e) => handleAddToCart(e, product)}>Add to Cart</button>
                     <button className="btn-card btn-card-outline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Shop Now</button>
                   </div>
                 </div>

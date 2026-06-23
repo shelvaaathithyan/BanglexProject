@@ -21,8 +21,8 @@ const HomePage = () => {
       gsap.fromTo('.hero-title span', { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.2, delay: 0.4, ease: 'power3.out' });
       gsap.fromTo('.hero-title-divider', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.6, ease: 'power3.out' });
       gsap.fromTo('.hero-desc', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, delay: 0.8, ease: 'power3.out' });
-      gsap.fromTo('.hero-actions .btn', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, delay: 1, ease: 'power3.out' });
-      gsap.fromTo('.hero-features .feature-item', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, delay: 1.2, ease: 'power3.out' });
+      gsap.fromTo('.hero-actions > *', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, delay: 1, ease: 'power3.out' });
+      gsap.fromTo('.hero-features-new .feature-item', { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, stagger: 0.1, delay: 1.2, ease: 'power3.out' });
     }, heroRef);
 
     return () => ctx.revert();
@@ -70,10 +70,16 @@ const HomePage = () => {
     e.stopPropagation();
     
     const card = e.target.closest('.product-card');
-    if (!card) return;
+    if (!card) {
+      console.log("No product card found");
+      return;
+    }
     
     const imgElement = card.querySelector('.product-image');
-    if (!imgElement) return;
+    if (!imgElement) {
+      console.log("No product image found");
+      return;
+    }
     
     // Find the visible cart icon
     const cartIcons = document.querySelectorAll('[aria-label="Shopping bag"]');
@@ -86,7 +92,11 @@ const HomePage = () => {
       }
     }
     
-    if (!targetCartIcon) return;
+    if (!targetCartIcon) {
+      console.log("No visible cart icon found");
+      return;
+    }
+    console.log("Found cart icon", targetCartIcon);
     
     const imgRect = imgElement.getBoundingClientRect();
     const cartRect = targetCartIcon.getBoundingClientRect();
@@ -164,13 +174,13 @@ const HomePage = () => {
       <section className="hero-section" ref={heroRef}>
         <div className="hero-container">
           <div className="hero-content">
-            <div className="hero-tag-wrapper" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2rem', width: '100%' }}>
+            <div className="hero-tag-wrapper">
               {/* Mandala Icon */}
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cb8d71" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: '1rem' }}>
+              <svg className="hero-mandala" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cb8d71" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M12 2v20M2 12h20M12 2a4 4 0 0 0-4 4 4 4 0 0 0 4 4M12 2a4 4 0 0 1 4 4 4 4 0 0 1-4 4M2 12a4 4 0 0 0 4-4 4 4 0 0 0 4 4M2 12a4 4 0 0 1 4 4 4 4 0 0 1-4-4M12 22a4 4 0 0 0-4-4 4 4 0 0 0 4-4M12 22a4 4 0 0 1 4-4 4 4 0 0 1-4-4M22 12a4 4 0 0 0-4-4 4 4 0 0 0-4 4M22 12a4 4 0 0 1-4 4 4 4 0 0 1-4 4" />
               </svg>
               
-              <div className="hero-tag" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', gap: '1rem', margin: 0 }}>
+              <div className="hero-tag">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ea6c65" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22v-9M12 13a4 4 0 0 0-4-4h-3M12 13a4 4 0 0 1 4-4h3M12 9V4M12 4a3 3 0 0 0-3 3v2M12 4a3 3 0 0 1 3 3v2"/></svg>
                 <span style={{ color: '#ea6c65', fontWeight: 600, letterSpacing: '0.1em', fontSize: '0.875rem' }}>HANDCRAFTED WITH LOVE</span>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ea6c65" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ transform: 'rotate(180deg)' }}><path d="M12 22v-9M12 13a4 4 0 0 0-4-4h-3M12 13a4 4 0 0 1 4-4h3M12 9V4M12 4a3 3 0 0 0-3 3v2M12 4a3 3 0 0 1 3 3v2"/></svg>
@@ -192,18 +202,18 @@ const HomePage = () => {
               Handcrafted bangles, terracotta jewellery, and personalized creations made to celebrate every moment.
             </p>
             
-            <div className="hero-actions" style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1rem', marginBottom: '2.5rem' }}>
-              <Link to="/category/glass-bangles" className="btn btn-dark-hero" style={{ width: '100%', justifyContent: 'center' }}>
+            <div className="hero-actions">
+              <Link to="/category/glass-bangles" className="btn btn-dark-hero">
                 Popular Picks <ArrowRight size={16} />
               </Link>
-              <Link to="/about" className="btn btn-outline-hero" style={{ width: '100%', justifyContent: 'center' }}>
+              <Link to="/about" className="btn btn-outline-hero">
                 About Us
               </Link>
             </div>
             
             <div className="hero-features-new" style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', width: '100%' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                <div className="feature-item" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
                   <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#fef0e7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <Heart size={18} color="#e07a5f" />
                   </div>
@@ -212,7 +222,7 @@ const HomePage = () => {
                 
                 <div style={{ width: '1px', height: '30px', backgroundColor: '#e2d4cb', margin: '0 1rem' }}></div>
                 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
+                <div className="feature-item" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1 }}>
                   <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#fef0e7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e07a5f" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 3h12l4 6-10 13L2 9Z"/></svg>
                   </div>
@@ -220,7 +230,7 @@ const HomePage = () => {
                 </div>
               </div>
               
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
+              <div className="feature-item" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', width: '100%' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', backgroundColor: '#fef0e7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Gift size={18} color="#e07a5f" />
                 </div>
