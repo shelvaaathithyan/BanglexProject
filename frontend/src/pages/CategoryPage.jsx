@@ -30,6 +30,24 @@ const CategoryPage = () => {
   const [sort, setSort] = useState(''); // sort order
   const [liked, setLiked] = useState({}); // local liked state
 
+  useEffect(() => {
+    // Load initially
+    const saved = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+    const likedMap = {};
+    saved.forEach(p => likedMap[p._id] = true);
+    setLiked(likedMap);
+
+    // Listen for updates from other tabs/components
+    const handleUpdate = () => {
+      const updated = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+      const updatedMap = {};
+      updated.forEach(p => updatedMap[p._id] = true);
+      setLiked(updatedMap);
+    };
+    window.addEventListener('savedLooksUpdated', handleUpdate);
+    return () => window.removeEventListener('savedLooksUpdated', handleUpdate);
+  }, []);
+
   const categoryName = categorySlugMapping[categorySlug] || categorySlug;
 
   useEffect(() => {
@@ -72,11 +90,20 @@ const CategoryPage = () => {
     return 0;
   });
 
-  const toggleLike = (e, id) => {
+  const toggleLike = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    setLiked(prev => ({ ...prev, [id]: !prev[id] }));
-    // TODO: Persist liked items to user profile on backend
+    
+    const saved = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+    const exists = saved.find(p => p._id === product._id);
+    let updated;
+    if (exists) {
+      updated = saved.filter(p => p._id !== product._id);
+    } else {
+      updated = [...saved, product];
+    }
+    localStorage.setItem('savedLooks', JSON.stringify(updated));
+    window.dispatchEvent(new Event('savedLooksUpdated'));
   };
 
   const handleAddToCart = (e, product) => {
@@ -206,9 +233,9 @@ const CategoryPage = () => {
                 <div className="product-image-wrapper">
                   <img src={product.images[0] || 'https://via.placeholder.com/300'} alt={product.name} className="product-image" />
                   {/* Heart icon */}
-                  <div className="heart-btn" onClick={e => toggleLike(e, product._id)}>
+                  <button className="btn-wishlist" onClick={(e) => toggleLike(e, product)}>
                     <Heart size={18} fill={liked[product._id] ? "#e11d48" : "none"} color={liked[product._id] ? "#e11d48" : "#4b5563"} />
-                  </div>
+                  </button>
                   {product.isOnSale && <span className="product-sale-badge">Sale</span>}
                   {product.color && <span className="product-color-badge">{product.color}</span>}
                 </div>

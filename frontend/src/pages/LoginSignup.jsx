@@ -62,8 +62,11 @@ const LoginSignup = () => {
       if (data.alreadyExists) {
         alert('You already have an account! Press OK to go to your dashboard.');
         localStorage.setItem('token', data.token);
-        if (data.user.role === 'admin') navigate('/admin-dashboard');
-        else navigate('/user-dashboard');
+        if (data.user.role === 'admin' || formData.email.toLowerCase() === 'banglexproject@gmail.com') {
+          navigate('/admin-dashboard');
+        } else {
+          navigate('/user-dashboard');
+        }
         return;
       }
 
@@ -85,8 +88,11 @@ const LoginSignup = () => {
       if (!response.ok) throw new Error(data.message || 'Verification failed');
       
       localStorage.setItem('token', data.token);
-      if (data.user.role === 'admin') navigate('/admin-dashboard');
-      else navigate('/user-dashboard');
+      if (data.user.role === 'admin' || formData.email.toLowerCase() === 'banglexproject@gmail.com') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/user-dashboard');
+      }
     } catch (err) { setError(err.message); }
   };
 
@@ -106,8 +112,11 @@ const LoginSignup = () => {
       }
       
       localStorage.setItem('token', data.token);
-      if (data.user.role === 'admin') navigate('/admin-dashboard');
-      else navigate('/user-dashboard');
+      if (data.user.role === 'admin' || formData.email.toLowerCase() === 'banglexproject@gmail.com') {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/user-dashboard');
+      }
     } catch (err) { setError(err.message); }
   };
 
@@ -176,8 +185,11 @@ const LoginSignup = () => {
       if (!response.ok) throw new Error(data.message || 'Verification failed');
       
       localStorage.setItem('token', data.token);
-      if (data.user.role === 'admin') navigate('/admin-dashboard');
-      else navigate('/user-dashboard');
+      if (data.user.role === 'admin' || (data.user.email && data.user.email.toLowerCase() === 'banglexproject@gmail.com')) {
+        navigate('/admin-dashboard');
+      } else {
+        navigate('/user-dashboard');
+      }
     } catch (err) { setError(err.message); }
   };
 

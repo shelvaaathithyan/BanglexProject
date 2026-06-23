@@ -10,7 +10,25 @@ import gsap from 'gsap';
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState(mockProducts);
   const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState({}); // local liked state
+  const [liked, setLiked] = useState({});
+
+  useEffect(() => {
+    // Load initially
+    const saved = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+    const likedMap = {};
+    saved.forEach(p => likedMap[p._id] = true);
+    setLiked(likedMap);
+
+    // Listen for updates from other tabs/components
+    const handleUpdate = () => {
+      const updated = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+      const updatedMap = {};
+      updated.forEach(p => updatedMap[p._id] = true);
+      setLiked(updatedMap);
+    };
+    window.addEventListener('savedLooksUpdated', handleUpdate);
+    return () => window.removeEventListener('savedLooksUpdated', handleUpdate);
+  }, []); // local liked state
 
   const heroRef = useRef(null);
 
@@ -58,11 +76,20 @@ const HomePage = () => {
     fetchPopularProducts();
   }, []);
 
-  const toggleLike = (e, id) => {
+  const toggleLike = (e, product) => {
     e.preventDefault();
     e.stopPropagation();
-    setLiked(prev => ({ ...prev, [id]: !prev[id] }));
-    // TODO: Persist liked state if needed
+    
+    const saved = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+    const exists = saved.find(p => p._id === product._id);
+    let updated;
+    if (exists) {
+      updated = saved.filter(p => p._id !== product._id);
+    } else {
+      updated = [...saved, product];
+    }
+    localStorage.setItem('savedLooks', JSON.stringify(updated));
+    window.dispatchEvent(new Event('savedLooksUpdated'));
   };
 
   const handleAddToCart = (e, product) => {
@@ -372,7 +399,7 @@ const HomePage = () => {
                     className="product-image"
                   />
                   {/* Heart icon */}
-                  <div className="heart-btn" onClick={e => toggleLike(e, product._id)}>
+                  <div className="heart-btn" onClick={e => toggleLike(e, product)}>
                     <Heart size={18} fill={liked[product._id] ? "#e11d48" : "none"} color={liked[product._id] ? "#e11d48" : "#4b5563"} />
                   </div>
                   {product.isOnSale && (

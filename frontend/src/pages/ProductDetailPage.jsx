@@ -84,6 +84,16 @@ const ProductDetailPage = () => {
     window.scrollTo(0, 0);
     setQuantity(1);
     setSelectedImageIndex(0);
+
+    const saved = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+    setIsSaved(saved.some(p => p._id === productId));
+
+    const handleUpdate = () => {
+      const updated = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+      setIsSaved(updated.some(p => p._id === productId));
+    };
+    window.addEventListener('savedLooksUpdated', handleUpdate);
+    return () => window.removeEventListener('savedLooksUpdated', handleUpdate);
   }, [productId]);
 
   const handleShare = () => {
@@ -93,16 +103,16 @@ const ProductDetailPage = () => {
   };
 
   const toggleSave = () => {
-    setIsSaved(!isSaved);
-    if (productId) {
-      const savedItems = JSON.parse(localStorage.getItem('savedItems') || '{}');
-      if (!isSaved) {
-        savedItems[productId] = true;
-      } else {
-        delete savedItems[productId];
-      }
-      localStorage.setItem('savedItems', JSON.stringify(savedItems));
+    if (!product) return;
+    const saved = JSON.parse(localStorage.getItem('savedLooks') || '[]');
+    let updated;
+    if (isSaved) {
+      updated = saved.filter(p => p._id !== product._id);
+    } else {
+      updated = [...saved, product];
     }
+    localStorage.setItem('savedLooks', JSON.stringify(updated));
+    window.dispatchEvent(new Event('savedLooksUpdated'));
   };
 
   const incrementQty = () => setQuantity(prev => prev + 1);
