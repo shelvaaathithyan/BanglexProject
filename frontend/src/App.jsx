@@ -11,13 +11,14 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/home" element={<HomePage />} />
         <Route path="/category/:categorySlug" element={<CategoryPage />} />
         <Route path="/product/:productId" element={<ProductDetailPage />} />
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );

@@ -202,7 +202,7 @@ const Navbar = () => {
   const cartItemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   const navLinks = [
-    { name: "HOME PAGE", href: "/" },
+    { name: "HOME PAGE", href: "/home" },
     { 
       name: "SHOP PRODUCTS", 
       dropdownGroups: [
@@ -293,7 +293,7 @@ const Navbar = () => {
             <>
               {/* Logo Area */}
               <div className="navbar-logo-container">
-                <Link to="/" className="store-logo-link">
+                <Link to="/home" className="store-logo-link">
                   <h1 className="store-logo">
                     RaHa <span className="logo-accent">Creations</span>
                   </h1>
@@ -365,7 +365,7 @@ const Navbar = () => {
                 {/* Mobile Menu Items */}
                 <div className="mobile-only-menu-wrapper">
                   {/* HOME PAGE */}
-                  <Link to="/" className="mobile-nav-item-safe" onClick={() => setIsMobileMenuOpen(false)} style={{ display: 'flex', width: '100%', padding: '1rem 0.5rem', color: '#0f172a', fontSize: '0.85rem', fontWeight: '600', borderBottom: '1px solid #e2e8f0', visibility: 'visible', opacity: 1, minHeight: '40px', zIndex: 9999 }}>
+                  <Link to="/home" className="mobile-nav-item-safe" onClick={() => setIsMobileMenuOpen(false)} style={{ display: 'flex', width: '100%', padding: '1rem 0.5rem', color: '#0f172a', fontSize: '0.85rem', fontWeight: '600', borderBottom: '1px solid #e2e8f0', visibility: 'visible', opacity: 1, minHeight: '40px', zIndex: 9999 }}>
                     HOME PAGE
                   </Link>
 

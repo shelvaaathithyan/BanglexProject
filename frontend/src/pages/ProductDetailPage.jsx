@@ -164,7 +164,7 @@ const ProductDetailPage = () => {
         <Navbar />
         <div className="catalog-error">
           <p>Error: {error || 'Product not found'}</p>
-          <Link to="/" className="back-to-home" style={{ marginTop: '1rem', display: 'inline-block' }}>&larr; Back to Home Page</Link>
+          <Link to="/home" className="back-to-home" style={{ marginTop: '1rem', display: 'inline-block' }}>&larr; Back to Home Page</Link>
         </div>
         <Footer />
       </div>
@@ -183,7 +183,7 @@ const ProductDetailPage = () => {
       <main className="product-detail-main">
         {/* Breadcrumb */}
         <div className="detail-breadcrumb">
-          <Link to="/" className="breadcrumb-link">Home</Link>
+          <Link to="/home" className="breadcrumb-link">Home</Link>
           <span className="breadcrumb-separator">/</span>
           <Link to={`/category/${product.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`} className="breadcrumb-link">
             {product.category}

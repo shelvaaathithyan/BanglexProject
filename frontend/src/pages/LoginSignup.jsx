@@ -360,7 +360,7 @@ const LoginSignup = () => {
   return (
     <div className="page-wrapper">
       <div className="auth-container-clean">
-        <Link to="/" className="store-logo-link-clean" style={{ textDecoration: 'none' }}>
+        <Link to="/home" className="store-logo-link-clean" style={{ textDecoration: 'none' }}>
           <div className="store-logo-clean">
             RaHa <span className="logo-accent">Creations</span>
           </div>
