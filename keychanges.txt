@@ -1,0 +1,9 @@
+excel(group product addition)
+middleware
+scrolling effect on top navbar
+stock count on products( no "0" count, "made on orders")
+phone number field in dashboard
+excel extraction for admin panel ( date to date )
+delivery address( extraction ) 
+rating like 
+order tracking ( bulk update check )

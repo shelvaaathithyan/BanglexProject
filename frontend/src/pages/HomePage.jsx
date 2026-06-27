@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import { mockProducts } from '../utils/mockProducts';
 import { Heart, Diamond, Gift as GiftIcon, ArrowRight, ShieldCheck } from 'lucide-react';
 import gsap from 'gsap';
+import API_BASE from '../config/api';
 
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState(mockProducts);
@@ -49,7 +50,7 @@ const HomePage = () => {
   useEffect(() => {
     const fetchPopularProducts = async () => {
       try {
-        const res = await fetch('http://localhost:5000/products');
+        const res = await fetch(`${API_BASE}/products`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {

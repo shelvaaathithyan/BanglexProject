@@ -12,7 +12,7 @@ const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_A
 const emailValidator = require('deep-email-validator');
 
 async function checkEmailValidity(email) {
-  // We disable SMTP because many providers (like Yahoo) block verification
+  // We disable SMTP because many providers (like Yahoo and Universities) block verification
   // But we keep regex, MX, typo, and disposable checks
   return emailValidator.validate({
     email: email,
@@ -20,7 +20,7 @@ async function checkEmailValidity(email) {
     validateMx: true,
     validateTypo: true,
     validateDisposable: true,
-    validateSMTP: true // Attempt SMTP check to verify mailbox existence
+    validateSMTP: false // Disabled because many domains block SMTP ping checks
   });
 }
 
@@ -209,10 +209,10 @@ router.get('/google', passport.authenticate('google', { scope: ['profile', 'emai
 
 router.get(
   '/google/callback',
-  passport.authenticate('google', { failureRedirect: 'http://localhost:5173/login?error=true', session: false }),
+  passport.authenticate('google', { failureRedirect: `${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?error=true`, session: false }),
   (req, res) => {
     const token = generateToken(req.user);
-    res.redirect(`http://localhost:5173/login?token=${token}&role=${req.user.role}`);
+    res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login?token=${token}&role=${req.user.role}`);
   }
 );
 

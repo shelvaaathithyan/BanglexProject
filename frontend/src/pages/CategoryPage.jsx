@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Star, Heart } from 'lucide-react';
 import gsap from 'gsap';
+import API_BASE from '../config/api';
 
 const categorySlugMapping = {
   'glass-bangles': 'Glass Bangles',
@@ -55,7 +56,7 @@ const CategoryPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`http://localhost:5000/products?category=${encodeURIComponent(categoryName)}`);
+        const res = await fetch(`${API_BASE}/products?category=${encodeURIComponent(categoryName)}`);
         if (!res.ok) throw new Error('Failed to load products');
         const data = await res.json();
         setProducts(data);

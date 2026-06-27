@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Footer from '../components/Footer';
+import API_BASE from '../config/api';
 
 const LoginSignup = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -43,7 +44,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setError(''); setMessage('');
     try {
-      const response = await fetch('http://localhost:5000/auth/signup', {
+      const response = await fetch(`${API_BASE}/auth/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, password: formData.password })
@@ -79,7 +80,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setError(''); setMessage('');
     try {
-      const response = await fetch('http://localhost:5000/auth/verify-email', {
+      const response = await fetch(`${API_BASE}/auth/verify-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, otp: formData.otp })
@@ -100,7 +101,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setError(''); setMessage('');
     try {
-      const response = await fetch('http://localhost:5000/auth/login', {
+      const response = await fetch(`${API_BASE}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, password: formData.password })
@@ -124,7 +125,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setError(''); setMessage('');
     try {
-      const response = await fetch('http://localhost:5000/auth/forgot-password', {
+      const response = await fetch(`${API_BASE}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email })
@@ -141,7 +142,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setError(''); setMessage('');
     try {
-      const response = await fetch('http://localhost:5000/auth/reset-password', {
+      const response = await fetch(`${API_BASE}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, otp: formData.otp, newPassword: formData.newPassword })
@@ -159,7 +160,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setError(''); setMessage('');
     try {
-      const response = await fetch('http://localhost:5000/auth/whatsapp/send-otp', {
+      const response = await fetch(`${API_BASE}/auth/whatsapp/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ whatsappNumber: formData.whatsappNumber })
@@ -176,7 +177,7 @@ const LoginSignup = () => {
     e.preventDefault();
     setError(''); setMessage('');
     try {
-      const response = await fetch('http://localhost:5000/auth/whatsapp/verify', {
+      const response = await fetch(`${API_BASE}/auth/whatsapp/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ whatsappNumber: formData.whatsappNumber, otp: formData.otp })
@@ -194,7 +195,7 @@ const LoginSignup = () => {
   };
 
   const handleGoogleLogin = () => {
-    window.location.href = 'http://localhost:5000/auth/google';
+    window.location.href = `${API_BASE}/auth/google`;
   };
 
   const resetState = () => {

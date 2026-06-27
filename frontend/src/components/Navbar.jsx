@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Search, User, ShoppingBag, Menu, X, LogOut, Plus, Minus } from 'lucide-react';
+import API_BASE from '../config/api';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -27,7 +28,7 @@ const Navbar = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-      const res = await fetch('http://localhost:5000/auth/me', {
+      const res = await fetch(`${API_BASE}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -42,7 +43,7 @@ const Navbar = () => {
 
   const fetchAllProducts = async () => {
     try {
-      const res = await fetch('http://localhost:5000/products');
+      const res = await fetch(`${API_BASE}/products`);
       if (res.ok) {
         const data = await res.json();
         setAllProducts(data);
@@ -150,7 +151,7 @@ const Navbar = () => {
             height: bangles?.clientHeight,
           }
         };
-        fetch('http://localhost:5000/api/dump', {
+        fetch(`${API_BASE}/api/dump`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(dump)

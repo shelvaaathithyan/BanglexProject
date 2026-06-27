@@ -4,6 +4,7 @@ import { Share2, Plus, Minus, Star, Truck, Heart, ShoppingCart, Zap } from 'luci
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { mockProducts } from '../utils/mockProducts';
+import API_BASE from '../config/api';
 
 const ProductDetailPage = () => {
   const { productId } = useParams();
@@ -61,12 +62,12 @@ const ProductDetailPage = () => {
           return;
         }
 
-        const res = await fetch(`http://localhost:5000/products/${productId}`);
+        const res = await fetch(`${API_BASE}/products/${productId}`);
         if (!res.ok) throw new Error('Product not found');
         const productData = await res.json();
         setProduct(productData);
 
-        const relRes = await fetch(`http://localhost:5000/products?category=${encodeURIComponent(productData.category)}`);
+        const relRes = await fetch(`${API_BASE}/products?category=${encodeURIComponent(productData.category)}`);
         if (relRes.ok) {
           const relData = await relRes.json();
           const filtered = relData.filter(item => item._id !== productId).slice(0, 4);

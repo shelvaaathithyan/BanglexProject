@@ -12,6 +12,7 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import { mockProducts } from '../utils/mockProducts';
+import API_BASE from '../config/api';
 
 const mockCategories = [
   { id: 1, name: 'Glass Bangles', desc: 'Traditional and designer glass bangles', products: 45, status: 'Active' },
@@ -102,7 +103,7 @@ const AdminDashboard = () => {
       formData.append('color', newProductForm.color);
       formData.append('image', newProductForm.image);
 
-      const res = await fetch('http://localhost:5000/products', {
+      const res = await fetch(`${API_BASE}/products`, {
         method: 'POST',
         body: formData
       });
@@ -128,7 +129,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       try {
-        const res = await fetch('http://localhost:5000/products');
+        const res = await fetch(`${API_BASE}/products`);
         if (res.ok) {
           const data = await res.json();
           const combined = [...data, ...mockProducts];

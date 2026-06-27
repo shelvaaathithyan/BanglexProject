@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import API_BASE from '../config/api';
 import { User, MapPin, Mail, ShoppingBag, Package, Heart, Paintbrush, ShoppingCart, Star, LogOut } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -83,7 +84,7 @@ const UserDashboard = () => {
       if (!token) return;
       
       try {
-        const res = await fetch('http://localhost:5000/auth/me', {
+        const res = await fetch(`${API_BASE}/auth/me`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -128,7 +129,7 @@ const UserDashboard = () => {
     const token = localStorage.getItem('token');
     
     try {
-      const res = await fetch('http://localhost:5000/auth/profile', {
+      const res = await fetch(`${API_BASE}/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
