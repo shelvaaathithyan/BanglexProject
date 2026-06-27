@@ -202,6 +202,7 @@ const UserDashboard = () => {
                   onClick={() => setActiveTab('saved')}
                 >
                   <Heart size={18} /> My Saved Looks
+                  {savedLooks.length > 0 && <span className="sidebar-badge">{savedLooks.length}</span>}
                 </button>
                 <button 
                   className={`sidebar-nav-item ${activeTab === 'studio' ? 'active' : ''}`}
