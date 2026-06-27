@@ -112,4 +112,66 @@ router.get('/:id', async (req, res) => {
   }
 });
 
+// @route   PUT /products/:id
+// @desc    Update a product
+router.put('/:id', (req, res, next) => {
+  uploadMultiple(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ message: 'Too many files selected. Max limit is 20 images.' });
+      }
+      return res.status(400).json({ message: err.message });
+    } else if (err) {
+      return res.status(500).json({ message: 'An error occurred during file upload.' });
+    }
+    next();
+  });
+}, async (req, res) => {
+  try {
+    const { name, description, category, price, stock, color } = req.body;
+    
+    let product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    if (name) product.name = name;
+    if (description !== undefined) product.description = description;
+    if (category) product.category = category;
+    if (price) product.price = Number(price);
+    if (stock !== undefined) product.stock = Number(stock);
+    if (color !== undefined) product.color = color;
+
+    if (req.files && req.files.length > 0) {
+      product.images = req.files.map(file => file.path);
+    }
+
+    const updatedProduct = await product.save();
+    res.json(updatedProduct);
+  } catch (err) {
+    console.error('Error updating product:', err);
+    res.status(500).json({ message: 'Server error while updating product' });
+  }
+});
+
+// @route   DELETE /products/:id
+// @desc    Delete a product
+router.delete('/:id', async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    
+    await Product.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Product removed' });
+  } catch (err) {
+    console.error('Error deleting product:', err);
+    if (err.kind === 'ObjectId') {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+    res.status(500).json({ message: 'Server error while deleting product' });
+  }
+});
+
 module.exports = router;

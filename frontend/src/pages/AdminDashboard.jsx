@@ -63,6 +63,8 @@ const AdminDashboard = () => {
   // Add Product Modal State
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [editingProductId, setEditingProductId] = useState(null);
   const [newProductForm, setNewProductForm] = useState({
     name: '',
     description: '',
@@ -86,7 +88,7 @@ const AdminDashboard = () => {
 
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
-    if (!newProductForm.name || !newProductForm.category || !newProductForm.price || newProductForm.images.length === 0) {
+    if (!newProductForm.name || !newProductForm.category || !newProductForm.price || (!isEditMode && newProductForm.images.length === 0)) {
       alert("Name, Category, Price, and at least one Image are required.");
       return;
     }
@@ -108,21 +110,32 @@ const AdminDashboard = () => {
       
       // Append each file with the key 'images'
       newProductForm.images.forEach(file => {
-        formData.append('images', file);
+        if (file instanceof File) {
+          formData.append('images', file);
+        }
       });
 
-      const res = await fetch(`${API_BASE}/products`, {
-        method: 'POST',
+      const url = isEditMode ? `${API_BASE}/products/${editingProductId}` : `${API_BASE}/products`;
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         body: formData
       });
 
       if (res.ok) {
         const savedProduct = await res.json();
-        setAllProducts(prev => [savedProduct, ...prev]);
+        if (isEditMode) {
+          setAllProducts(prev => prev.map(p => p._id === editingProductId ? savedProduct : p));
+        } else {
+          setAllProducts(prev => [savedProduct, ...prev]);
+        }
         setIsAddProductModalOpen(false);
+        setIsEditMode(false);
+        setEditingProductId(null);
         setNewProductForm({ name: '', description: '', category: '', price: '', stock: '', color: '', images: [] });
       } else {
-        let errMsg = 'Failed to add product';
+        let errMsg = isEditMode ? 'Failed to update product' : 'Failed to add product';
         try {
           const errorData = await res.json();
           errMsg = errorData.message || errMsg;
@@ -136,6 +149,40 @@ const AdminDashboard = () => {
       alert('Error connecting to server.');
     } finally {
       setIsAddingProduct(false);
+    }
+  };
+
+  const handleEditClick = (product) => {
+    setIsEditMode(true);
+    setEditingProductId(product._id);
+    setNewProductForm({
+      name: product.name || '',
+      description: product.description || '',
+      category: product.category || '',
+      price: product.price || '',
+      stock: product.stock || '',
+      color: product.color || '',
+      images: [] 
+    });
+    setIsAddProductModalOpen(true);
+  };
+
+  const handleDeleteProduct = async (productId) => {
+    if (!window.confirm("Are you sure you want to delete this product?")) {
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/products/${productId}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        setAllProducts(prev => prev.filter(p => p._id !== productId));
+      } else {
+        alert("Failed to delete product.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error connecting to server.");
     }
   };
 
@@ -555,7 +602,7 @@ const AdminDashboard = () => {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a' }}>Products Management</h2>
                 <button 
-                  onClick={() => setIsAddProductModalOpen(true)}
+                  onClick={() => { setIsEditMode(false); setEditingProductId(null); setNewProductForm({ name: '', description: '', category: '', price: '', stock: '', color: '', images: [] }); setIsAddProductModalOpen(true); }}
                   style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}
                 >
                   <Plus size={18} /> Add New Product
@@ -620,8 +667,8 @@ const AdminDashboard = () => {
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                            <button onClick={() => handleEditClick(product)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
+                            <button onClick={() => handleDeleteProduct(product._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
                           </div>
                         </td>
                       </tr>
@@ -726,7 +773,7 @@ const AdminDashboard = () => {
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#0f172a' }}>Add New Product</h3>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#0f172a' }}>{isEditMode ? 'Edit Product' : 'Add New Product'}</h3>
               <button onClick={() => setIsAddProductModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem', color: '#64748b' }}>&times;</button>
             </div>
             
@@ -769,8 +816,8 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Product Images * (Select multiple, order is preserved)</label>
-                <input type="file" multiple accept="image/*" onChange={handleProductFileChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px dashed #cbd5e1', fontSize: '0.875rem', cursor: 'pointer' }} />
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Product Images {isEditMode ? '(Leave empty to keep existing)' : '* (Select multiple, order is preserved)'}</label>
+                <input type="file" multiple accept="image/*" onChange={handleProductFileChange} required={!isEditMode} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px dashed #cbd5e1', fontSize: '0.875rem', cursor: 'pointer' }} />
                 
                 {/* Image Preview / Order Verification */}
                 {newProductForm.images.length > 0 && (
@@ -790,7 +837,7 @@ const AdminDashboard = () => {
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
                 <button type="button" onClick={() => setIsAddProductModalOpen(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={isAddingProduct} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: isAddingProduct ? '#f43f5e80' : '#e11d48', color: 'white', fontWeight: 600, cursor: isAddingProduct ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {isAddingProduct ? 'Uploading...' : 'Save Product'}
+                  {isAddingProduct ? (isEditMode ? 'Updating...' : 'Uploading...') : (isEditMode ? 'Update Product' : 'Save Product')}
                 </button>
               </div>
             </form>
