@@ -5,7 +5,8 @@ import {
   Archive, Users, Tag, Star, Radio, BarChart2, UsersRound, 
   Settings, FileText, Search, ExternalLink, Bell, CheckCircle, 
   ShoppingBag, HelpCircle, TrendingUp, TrendingDown, ArrowUpRight,
-  ChevronRight, Heart, Plus, Edit, Trash2, MoreVertical, Filter
+  ChevronRight, Heart, Plus, Edit, Trash2, MoreVertical, Filter,
+  PartyPopper, Calendar, Percent, Eye
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -27,6 +28,14 @@ const mockServices = [
   { id: 1, name: 'Organisers & Decors', duration: 'N/A', price: '₹350 - ₹1200', bookings: 145 },
   { id: 2, name: 'Gift Hampers', duration: 'Custom', price: '₹999 - ₹2500', bookings: 82 },
   { id: 3, name: 'Design Studio', duration: 'Consultation', price: '₹500', bookings: 28 }
+];
+
+const mockFestivals = [
+  { id: 1, name: 'Diwali Dhamaka', desc: 'Flat discount on all services', festival: 'Diwali', discount: '20% OFF', validity: '01 Nov - 15 Nov 2025', minOrder: '₹999', status: 'Active', icon: '🪔' },
+  { id: 2, name: 'Christmas Special', desc: 'Discount on gift hampers', festival: 'Christmas', discount: '15% OFF', validity: '20 Dec - 31 Dec 2025', minOrder: '₹799', status: 'Active', icon: '🎄' },
+  { id: 3, name: 'Pongal Offer', desc: 'Special for festive season', festival: 'Pongal', discount: '12% OFF', validity: '10 Jan - 16 Jan 2026', minOrder: '₹599', status: 'Scheduled', icon: '🌾' },
+  { id: 4, name: 'Holi Bash', desc: 'Colorful discounts on services', festival: 'Holi', discount: '18% OFF', validity: '13 Mar - 20 Mar 2026', minOrder: '₹699', status: 'Upcoming', icon: '🎨' },
+  { id: 5, name: 'Easter Treats', desc: 'Hampers & decor discounts', festival: 'Easter', discount: '10% OFF', validity: '03 Apr - 10 Apr 2026', minOrder: '₹499', status: 'Upcoming', icon: '🐰' }
 ];
 
 const AdminDashboard = () => {
@@ -349,6 +358,9 @@ const AdminDashboard = () => {
             </button>
             <button className={`admin-nav-item ${activeTab === 'services' ? 'active' : ''}`} onClick={() => setActiveTab('services')} style={{ background: activeTab === 'services' ? '#e11d48' : 'transparent', color: activeTab === 'services' ? 'white' : '#94a3b8' }}>
               <div className="admin-nav-item-left"><Layers size={18} /> Services</div> <ChevronRight />
+            </button>
+            <button className={`admin-nav-item ${activeTab === 'festival' ? 'active' : ''}`} onClick={() => setActiveTab('festival')} style={{ background: activeTab === 'festival' ? '#e11d48' : 'transparent', color: activeTab === 'festival' ? 'white' : '#94a3b8' }}>
+              <div className="admin-nav-item-left"><PartyPopper size={18} /> Festival Addition</div> <ChevronRight />
             </button>
           </div>
 
@@ -879,6 +891,143 @@ const AdminDashboard = () => {
                         <td>
                           <div style={{ display: 'flex', gap: '0.5rem' }}>
                             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'festival' && (
+            <div className="admin-tab-view">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
+                <div>
+                  <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.25rem' }}>Festival Addition</h2>
+                  <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Create and manage festival offers, discounts and special promotions.</p>
+                </div>
+                <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                  <Plus size={18} /> Add Festival Offer
+                </button>
+              </div>
+
+              {/* Top Metrics Row for Festivals */}
+              <div className="admin-metrics-grid" style={{ marginBottom: '2rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+                <div className="admin-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#ffe4e6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}>
+                    <Tag size={24} />
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Active Offers</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>3</div>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Currently running</div>
+                  </div>
+                </div>
+                <div className="admin-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
+                    <Calendar size={24} />
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Upcoming Offers</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>2</div>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Scheduled</div>
+                  </div>
+                </div>
+                <div className="admin-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5' }}>
+                    <Percent size={24} />
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Total Discounts</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>12% - 25%</div>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Across all offers</div>
+                  </div>
+                </div>
+                <div className="admin-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
+                    <ShoppingBag size={24} />
+                  </div>
+                  <div>
+                    <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Total Usage</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>156</div>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Redemptions</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Toolbar */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ position: 'relative', width: '300px' }}>
+                  <Search size={16} color="#94a3b8" style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)' }} />
+                  <input type="text" placeholder="Search offers..." style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.5rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '1rem' }}>
+                  <select style={{ padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', color: '#475569', background: 'white', outline: 'none' }}>
+                    <option>All Status</option>
+                  </select>
+                  <select style={{ padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', color: '#475569', background: 'white', outline: 'none' }}>
+                    <option>All Festivals</option>
+                  </select>
+                  <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', color: '#475569', background: 'white', cursor: 'pointer' }}>
+                    <Calendar size={16} /> Select Date Range
+                  </button>
+                </div>
+              </div>
+
+              <div className="admin-card">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th style={{ paddingLeft: '1.5rem' }}>Offer Name</th>
+                      <th>Festival</th>
+                      <th>Discount</th>
+                      <th>Validity</th>
+                      <th>Min. Order</th>
+                      <th>Status</th>
+                      <th style={{ textAlign: 'center' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {mockFestivals.map((fest, idx) => (
+                      <tr key={idx} style={{ borderBottom: idx !== mockFestivals.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                        <td style={{ paddingLeft: '1.5rem', paddingVertical: '1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
+                              {fest.icon}
+                            </div>
+                            <div>
+                              <div style={{ fontWeight: 600, color: '#0f172a' }}>{fest.name}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>{fest.desc}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#475569', fontSize: '0.875rem' }}>
+                            <Calendar size={14} color="#94a3b8" /> {fest.festival}
+                          </div>
+                        </td>
+                        <td style={{ fontWeight: 600, color: '#16a34a' }}>{fest.discount}</td>
+                        <td style={{ fontSize: '0.875rem', color: '#475569' }}>{fest.validity}</td>
+                        <td style={{ fontWeight: 500, color: '#0f172a' }}>{fest.minOrder}</td>
+                        <td>
+                          <span style={{ 
+                            padding: '0.25rem 0.75rem', 
+                            borderRadius: '99px', 
+                            fontSize: '0.75rem', 
+                            fontWeight: 600,
+                            background: fest.status === 'Active' ? '#dcfce7' : fest.status === 'Scheduled' ? '#fef3c7' : '#e0e7ff', 
+                            color: fest.status === 'Active' ? '#16a34a' : fest.status === 'Scheduled' ? '#d97706' : '#4f46e5'
+                          }}>
+                            {fest.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><Edit size={16} /></button>
+                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><Eye size={16} /></button>
                             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
                           </div>
                         </td>
