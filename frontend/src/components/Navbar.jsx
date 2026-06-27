@@ -19,6 +19,7 @@ const Navbar = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [allProducts, setAllProducts] = useState([]);
+  const [dbCategories, setDbCategories] = useState([]);
 
   // Cart States
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -53,6 +54,18 @@ const Navbar = () => {
     }
   };
 
+  const fetchDbCategories = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/categories`);
+      if (res.ok) {
+        const data = await res.json();
+        setDbCategories(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const loadCart = () => {
     const items = JSON.parse(localStorage.getItem('cart') || '[]');
     setCartItems(items);
@@ -78,6 +91,7 @@ const Navbar = () => {
   useEffect(() => {
     // Load products once for instant filtering
     fetchAllProducts();
+    fetchDbCategories();
     loadCart();
 
     const handleCartUpdate = () => {
@@ -201,6 +215,8 @@ const Navbar = () => {
 
   const cartItemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
+  const getCategorySlug = (name) => `/category/${name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`;
+
   const navLinks = [
     { name: "HOME PAGE", href: "/home" },
     { 
@@ -208,35 +224,19 @@ const Navbar = () => {
       dropdownGroups: [
         {
           title: "Bangles",
-          items: [
-            { name: "Glass Bangles", href: "/category/glass-bangles" },
-            { name: "Baby Shower", href: "/category/baby-shower" },
-            { name: "Antique Bangles", href: "/category/antique-bangles" },
-            { name: "Combos", href: "/category/combos" },
-            { name: "Plus Size Bangles", href: "/category/plus-size-bangles" }
-          ]
+          items: dbCategories.filter(c => c.group === 'Bangles').map(c => ({ name: c.name, href: getCategorySlug(c.name) }))
         },
         {
           title: "Terracotta Jewellery",
-          items: [
-            { name: "Daily wear", href: "/category/daily-wear" },
-            { name: "Jumkas", href: "/category/jumkas" },
-            { name: "Studs", href: "/category/studs" },
-            { name: "Jewellery Set", href: "/category/jewellery-set" },
-            { name: "Bridal Set", href: "/category/bridal-set" },
-            { name: "Kids wear", href: "/category/kids-wear" }
-          ]
+          items: dbCategories.filter(c => c.group === 'Terracotta Jewellery').map(c => ({ name: c.name, href: getCategorySlug(c.name) }))
         }
       ]
     },
     { 
       name: "OUR SERVICES", 
-      dropdown: [
-        { name: "Organisers & Decors", href: "/category/organiser" },
-        { name: "Gift Hampers", href: "/category/hampers" }
-      ]
+      dropdown: dbCategories.filter(c => c.group === 'Our Services').map(c => ({ name: c.name, href: getCategorySlug(c.name) }))
     },
-    { name: "DESIGN STUDIO", href: "/category/organiser" }
+    { name: "DESIGN STUDIO", href: "/category/organiser" } // Keep existing default
   ];
 
   return (
@@ -322,11 +322,20 @@ const Navbar = () => {
                                 <div key={gIndex} className="mega-dropdown-column">
                                   <h4 className="mega-dropdown-title">{group.title}</h4>
                                   <div className="mega-dropdown-items">
-                                    {group.items.map((subLink, subIndex) => (
-                                      <Link key={subIndex} to={subLink.href} className="nav-dropdown-item">
-                                        {subLink.name}
-                                      </Link>
-                                    ))}
+                                    {group.items.map((subLink, subIndex) => {
+                                      const catData = dbCategories.find(c => c.name === subLink.name);
+                                      const isInactive = catData && catData.status === 'Inactive';
+                                      
+                                      return isInactive ? (
+                                        <div key={subIndex} className="nav-dropdown-item inactive-category" title="We are currently not delivering products in this category!!" style={{ opacity: 0.5, cursor: 'not-allowed', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                          <X size={14} color="#ef4444" /> {subLink.name}
+                                        </div>
+                                      ) : (
+                                        <Link key={subIndex} to={subLink.href} className="nav-dropdown-item">
+                                          {subLink.name}
+                                        </Link>
+                                      );
+                                    })}
                                   </div>
                                 </div>
                               ))}
@@ -344,11 +353,20 @@ const Navbar = () => {
                             </svg>
                           </span>
                           <div className="nav-dropdown">
-                            {link.dropdown.map((subLink, subIndex) => (
-                              <Link key={subIndex} to={subLink.href} className="nav-dropdown-item">
-                                {subLink.name}
-                              </Link>
-                            ))}
+                            {link.dropdown.map((subLink, subIndex) => {
+                              const catData = dbCategories.find(c => c.name === subLink.name);
+                              const isInactive = catData && catData.status === 'Inactive';
+
+                              return isInactive ? (
+                                <div key={subIndex} className="nav-dropdown-item inactive-category" title="We are currently not delivering products in this category!!" style={{ opacity: 0.5, cursor: 'not-allowed', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <X size={14} color="#ef4444" /> {subLink.name}
+                                </div>
+                              ) : (
+                                <Link key={subIndex} to={subLink.href} className="nav-dropdown-item">
+                                  {subLink.name}
+                                </Link>
+                              );
+                            })}
                           </div>
                         </div>
                       );
@@ -377,11 +395,20 @@ const Navbar = () => {
                         <div key={gIndex} className="mobile-subgroup">
                           <span className="mobile-subgroup-title">{group.title}</span>
                           <div className="mobile-subgroup-items">
-                            {group.items.map((item, i) => (
-                              <Link key={i} to={item.href} className="nav-dropdown-item" onClick={() => setIsMobileMenuOpen(false)}>
-                                {item.name}
-                              </Link>
-                            ))}
+                            {group.items.map((item, i) => {
+                              const catData = dbCategories.find(c => c.name === item.name);
+                              const isInactive = catData && catData.status === 'Inactive';
+
+                              return isInactive ? (
+                                <div key={i} className="nav-dropdown-item inactive-category" title="We are currently not delivering products in this category!!" style={{ opacity: 0.5, cursor: 'not-allowed', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  <X size={14} color="#ef4444" /> {item.name}
+                                </div>
+                              ) : (
+                                <Link key={i} to={item.href} className="nav-dropdown-item" onClick={() => setIsMobileMenuOpen(false)}>
+                                  {item.name}
+                                </Link>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
@@ -393,11 +420,20 @@ const Navbar = () => {
                     <span className="category-link mobile-group-header">OUR SERVICES</span>
                     <div className="mobile-group-content">
                       <div className="mobile-subgroup-items">
-                        {navLinks[2].dropdown.map((item, i) => (
-                          <Link key={i} to={item.href} className="nav-dropdown-item" onClick={() => setIsMobileMenuOpen(false)}>
-                            {item.name}
-                          </Link>
-                        ))}
+                        {navLinks[2].dropdown.map((item, i) => {
+                          const catData = dbCategories.find(c => c.name === item.name);
+                          const isInactive = catData && catData.status === 'Inactive';
+
+                          return isInactive ? (
+                            <div key={i} className="nav-dropdown-item inactive-category" title="We are currently not delivering products in this category!!" style={{ opacity: 0.5, cursor: 'not-allowed', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                              <X size={14} color="#ef4444" /> {item.name}
+                            </div>
+                          ) : (
+                            <Link key={i} to={item.href} className="nav-dropdown-item" onClick={() => setIsMobileMenuOpen(false)}>
+                              {item.name}
+                            </Link>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>

@@ -46,7 +46,7 @@ router.post('/', (req, res, next) => {
       }
       return res.status(400).json({ message: err.message });
     } else if (err) {
-      return res.status(500).json({ message: 'An error occurred during file upload.' });
+      return res.status(500).json({ message: `File upload error: ${err.message || 'Unknown error'}` });
     }
     next();
   });
@@ -122,7 +122,7 @@ router.put('/:id', (req, res, next) => {
       }
       return res.status(400).json({ message: err.message });
     } else if (err) {
-      return res.status(500).json({ message: 'An error occurred during file upload.' });
+      return res.status(500).json({ message: `File upload error: ${err.message || 'Unknown error'}` });
     }
     next();
   });

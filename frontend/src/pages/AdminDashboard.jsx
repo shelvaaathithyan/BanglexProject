@@ -75,6 +75,92 @@ const AdminDashboard = () => {
     images: []
   });
 
+  // Category Modal State
+  const [allCategories, setAllCategories] = useState([]);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isAddingCategory, setIsAddingCategory] = useState(false);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [newCategoryForm, setNewCategoryForm] = useState({
+    name: '',
+    description: '',
+    status: 'Active',
+    group: 'Bangles'
+  });
+
+  const handleCategoryInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewCategoryForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleAddCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!newCategoryForm.name) {
+      alert("Category name is required.");
+      return;
+    }
+    
+    setIsAddingCategory(true);
+    try {
+      const url = isEditingCategory ? `${API_BASE}/categories/${editingCategoryId}` : `${API_BASE}/categories`;
+      const method = isEditingCategory ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCategoryForm)
+      });
+
+      if (res.ok) {
+        const savedCat = await res.json();
+        if (isEditingCategory) {
+          setAllCategories(prev => prev.map(c => c._id === editingCategoryId ? savedCat : c));
+        } else {
+          setAllCategories(prev => [...prev, savedCat]);
+        }
+        setIsCategoryModalOpen(false);
+        setIsEditingCategory(false);
+        setEditingCategoryId(null);
+        setNewCategoryForm({ name: '', description: '', status: 'Active', group: 'Bangles' });
+      } else {
+        const errorData = await res.json();
+        alert(errorData.message || 'Failed to save category');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error connecting to server.');
+    } finally {
+      setIsAddingCategory(false);
+    }
+  };
+
+  const handleEditCategoryClick = (category) => {
+    setIsEditingCategory(true);
+    setEditingCategoryId(category._id);
+    setNewCategoryForm({
+      name: category.name || '',
+      description: category.description || '',
+      status: category.status || 'Active',
+      group: category.group || 'Bangles'
+    });
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm("Are you sure you want to delete this category?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/categories/${categoryId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setAllCategories(prev => prev.filter(c => c._id !== categoryId));
+      } else {
+        alert("Failed to delete category.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+
   const handleProductInputChange = (e) => {
     const { name, value } = e.target;
     setNewProductForm(prev => ({ ...prev, [name]: value }));
@@ -199,7 +285,21 @@ const AdminDashboard = () => {
         console.error('Failed to fetch products for admin panel:', err);
       }
     };
+
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/categories`);
+        if (res.ok) {
+          const data = await res.json();
+          setAllCategories(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch categories:', err);
+      }
+    };
+
     fetchProducts();
+    fetchCategories();
   }, []);
 
   const filteredProducts = allProducts.filter(product => {
@@ -212,7 +312,7 @@ const AdminDashboard = () => {
     return matchesSearch && matchesFilter;
   });
 
-  const uniqueProductCategories = ['All Categories', ...new Set(allProducts.map(p => p.category).filter(Boolean))];
+  const uniqueProductCategories = ['All Categories', ...new Set(allCategories.map(c => c.name).filter(Boolean))];
 
   return (
     <div className="admin-layout">
@@ -683,7 +783,7 @@ const AdminDashboard = () => {
             <div className="admin-tab-view">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a' }}>Categories Management</h2>
-                <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={() => { setIsEditingCategory(false); setEditingCategoryId(null); setNewCategoryForm({ name: '', description: '', status: 'Active', group: 'Bangles' }); setIsCategoryModalOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
                   <Plus size={18} /> Add Category
                 </button>
               </div>
@@ -699,22 +799,48 @@ const AdminDashboard = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {mockCategories.map((cat, idx) => (
-                      <tr key={idx}>
-                        <td style={{ fontWeight: 500, color: '#0f172a' }}>{cat.name}</td>
-                        <td style={{ color: '#64748b' }}>{cat.desc}</td>
-                        <td style={{ fontWeight: 500 }}>{cat.products} items</td>
-                        <td>
-                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: cat.status === 'Active' ? '#dcfce7' : '#f1f5f9', color: cat.status === 'Active' ? '#16a34a' : '#64748b', fontWeight: 600 }}>{cat.status}</span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {(() => {
+                      if (allCategories.length === 0) {
+                        return <tr><td colSpan="5" style={{ textAlign: 'center', padding: '2rem' }}>No categories found.</td></tr>;
+                      }
+
+                      const groups = ['Bangles', 'Terracotta Jewellery', 'Our Services'];
+                      const grouped = {};
+                      groups.forEach(g => grouped[g] = []);
+                      allCategories.forEach(c => {
+                        const g = c.group || 'Bangles';
+                        if (!grouped[g]) grouped[g] = [];
+                        grouped[g].push(c);
+                      });
+
+                      return Object.keys(grouped).map(groupName => (
+                        <React.Fragment key={groupName}>
+                          {grouped[groupName].length > 0 && (
+                            <tr>
+                              <td colSpan="5" style={{ background: '#f8fafc', fontWeight: 700, color: '#334155', padding: '1rem', borderTop: '1px solid #e2e8f0', borderBottom: '1px solid #e2e8f0', textTransform: 'uppercase', fontSize: '0.875rem' }}>
+                                {groupName}
+                              </td>
+                            </tr>
+                          )}
+                          {grouped[groupName].map((cat, idx) => (
+                            <tr key={`${groupName}-${idx}`}>
+                              <td style={{ fontWeight: 500, color: '#0f172a', paddingLeft: '2rem' }}>{cat.name}</td>
+                              <td style={{ color: '#64748b' }}>{cat.description || '-'}</td>
+                              <td style={{ fontWeight: 500 }}>{cat.products || 0} items</td>
+                              <td>
+                                <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: cat.status === 'Active' ? '#dcfce7' : '#f1f5f9', color: cat.status === 'Active' ? '#16a34a' : '#64748b', fontWeight: 600 }}>{cat.status || 'Active'}</span>
+                              </td>
+                              <td>
+                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                  <button onClick={() => handleEditCategoryClick(cat)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
+                                  <button onClick={() => handleDeleteCategory(cat._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </React.Fragment>
+                      ));
+                    })()}
                   </tbody>
                 </table>
               </div>
@@ -768,7 +894,7 @@ const AdminDashboard = () => {
         </div>
       </div>
 
-      {/* Add Product Modal */}
+      {/* Add/Edit Product Modal */}
       {isAddProductModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto' }}>
@@ -793,8 +919,8 @@ const AdminDashboard = () => {
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Category *</label>
                   <select name="category" value={newProductForm.category} onChange={handleProductInputChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit', backgroundColor: 'white' }}>
                     <option value="" disabled>Select a category</option>
-                    {mockCategories.map(cat => (
-                      <option key={cat.id} value={cat.name}>{cat.name}</option>
+                    {allCategories.map(cat => (
+                      <option key={cat._id} value={cat.name}>{cat.name}</option>
                     ))}
                   </select>
                 </div>
@@ -838,6 +964,54 @@ const AdminDashboard = () => {
                 <button type="button" onClick={() => setIsAddProductModalOpen(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={isAddingProduct} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: isAddingProduct ? '#f43f5e80' : '#e11d48', color: 'white', fontWeight: 600, cursor: isAddingProduct ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   {isAddingProduct ? (isEditMode ? 'Updating...' : 'Uploading...') : (isEditMode ? 'Update Product' : 'Save Product')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add/Edit Category Modal */}
+      {isCategoryModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: 'white', padding: '2rem', borderRadius: '12px', width: '400px', maxWidth: '90%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#0f172a' }}>{isEditingCategory ? 'Edit Category' : 'Add New Category'}</h3>
+              <button onClick={() => setIsCategoryModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.5rem', color: '#64748b' }}>&times;</button>
+            </div>
+            
+            <form onSubmit={handleAddCategorySubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Category Name *</label>
+                <input type="text" name="name" value={newCategoryForm.name} onChange={handleCategoryInputChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} />
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Description</label>
+                <textarea name="description" value={newCategoryForm.description} onChange={handleCategoryInputChange} rows="3" style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}></textarea>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Group</label>
+                <select name="group" value={newCategoryForm.group} onChange={handleCategoryInputChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', backgroundColor: 'white' }}>
+                  <option value="Bangles">Bangles</option>
+                  <option value="Terracotta Jewellery">Terracotta Jewellery</option>
+                  <option value="Our Services">Our Services</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Status</label>
+                <select name="status" value={newCategoryForm.status} onChange={handleCategoryInputChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', backgroundColor: 'white' }}>
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>
+                <button type="button" onClick={() => setIsCategoryModalOpen(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button type="submit" disabled={isAddingCategory} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: isAddingCategory ? '#f43f5e80' : '#e11d48', color: 'white', fontWeight: 600, cursor: isAddingCategory ? 'not-allowed' : 'pointer' }}>
+                  {isAddingCategory ? (isEditingCategory ? 'Updating...' : 'Saving...') : (isEditingCategory ? 'Update Category' : 'Save Category')}
                 </button>
               </div>
             </form>

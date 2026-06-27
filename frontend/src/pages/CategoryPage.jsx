@@ -49,14 +49,30 @@ const CategoryPage = () => {
     return () => window.removeEventListener('savedLooksUpdated', handleUpdate);
   }, []);
 
-  const categoryName = categorySlugMapping[categorySlug] || categorySlug;
+  const [actualCategoryName, setActualCategoryName] = useState('');
+
+  useEffect(() => {
+    // Resolve slug to actual category name dynamically
+    const resolveCategory = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/categories`);
+        const cats = await res.json();
+        const found = cats.find(c => c.name.toLowerCase().replace(/[^a-z0-9]+/g, '-') === categorySlug);
+        setActualCategoryName(found ? found.name : (categorySlugMapping[categorySlug] || categorySlug));
+      } catch (err) {
+        setActualCategoryName(categorySlugMapping[categorySlug] || categorySlug);
+      }
+    };
+    resolveCategory();
+  }, [categorySlug]);
 
   useEffect(() => {
     const fetchCategoryProducts = async () => {
+      if (!actualCategoryName) return; // wait until resolved
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_BASE}/products?category=${encodeURIComponent(categoryName)}`);
+        const res = await fetch(`${API_BASE}/products?category=${encodeURIComponent(actualCategoryName)}`);
         if (!res.ok) throw new Error('Failed to load products');
         const data = await res.json();
         setProducts(data);
@@ -69,7 +85,7 @@ const CategoryPage = () => {
     };
     fetchCategoryProducts();
     window.scrollTo(0, 0);
-  }, [categorySlug, categoryName]);
+  }, [actualCategoryName]);
 
   // Apply filter
   const filteredProducts = products.filter(p => {
@@ -203,7 +219,7 @@ const CategoryPage = () => {
       <Navbar />
       <main className="category-detail-container">
         <div className="category-header">
-          <h2 className="category-title">{categoryName}</h2>
+          <h2 className="category-title">{actualCategoryName}</h2>
         </div>
         {/* Filter & Sort Toolbar */}
         <div className="toolbar">
