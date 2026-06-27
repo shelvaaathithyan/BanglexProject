@@ -6,7 +6,9 @@ import {
   Settings, FileText, Search, ExternalLink, Bell, CheckCircle, 
   ShoppingBag, HelpCircle, TrendingUp, TrendingDown, ArrowUpRight,
   ChevronRight, Heart, Plus, Edit, Trash2, MoreVertical, Filter,
-  PartyPopper, Calendar, Percent, Eye
+  PartyPopper, Calendar, Percent, Eye, UploadCloud, CheckSquare,
+  Image as ImageIcon, Ticket, Save, Rocket, AlertCircle, Info, 
+  ListChecks, CalendarRange, MonitorPlay, ShieldCheck
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -96,6 +98,29 @@ const AdminDashboard = () => {
     description: '',
     status: 'Active',
     group: 'Bangles'
+  });
+
+  const [isAddingFestival, setIsAddingFestival] = useState(false);
+  const [newFestivalForm, setNewFestivalForm] = useState({
+    name: '',
+    description: '',
+    discountType: '',
+    discountValue: '',
+    minOrder: '',
+    applyTo: 'All Products',
+    categories: '',
+    products: '',
+    startDate: '',
+    endDate: '',
+    status: 'Scheduled',
+    banner: null,
+    bannerText: '',
+    showBadge: true,
+    showTimer: true,
+    featureOnHome: true,
+    couponCode: '',
+    usageLimit: '',
+    perUserLimit: ''
   });
 
   const handleCategoryInputChange = (e) => {
@@ -902,14 +927,14 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          {activeTab === 'festival' && (
+          {activeTab === 'festival' && !isAddingFestival && (
             <div className="admin-tab-view">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' }}>
                 <div>
                   <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.25rem' }}>Festival Addition</h2>
                   <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Create and manage festival offers, discounts and special promotions.</p>
                 </div>
-                <button style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={() => setIsAddingFestival(true)} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
                   <Plus size={18} /> Add Festival Offer
                 </button>
               </div>
@@ -1035,6 +1060,247 @@ const AdminDashboard = () => {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'festival' && isAddingFestival && (
+            <div className="admin-tab-view">
+              <div style={{ marginBottom: '2rem' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.25rem' }}>Add New Festival Offer</h2>
+                <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Create festival offers, discounts and promotions for your customers.</p>
+              </div>
+
+              <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
+                {/* Form Sections Grid */}
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                  
+                  {/* 1. Basic Information */}
+                  <div className="admin-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
+                      <Info size={16} /> 1. Basic Information
+                    </div>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Festival Name *</label>
+                      <input type="text" placeholder="e.g., Diwali, Christmas, Pongal" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Description</label>
+                      <textarea rows="3" placeholder="Describe the offer and its benefits..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                    </div>
+                  </div>
+
+                  {/* 2. Discount Configuration */}
+                  <div className="admin-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
+                      <Percent size={16} /> 2. Discount Configuration
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Discount Type *</label>
+                        <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
+                          <option>Select discount type</option>
+                          <option>Percentage (%)</option>
+                          <option>Fixed Amount (₹)</option>
+                        </select>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Discount Value *</label>
+                        <input type="text" placeholder="e.g., 20 or 500" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Minimum Order Value (₹)</label>
+                      <input type="text" placeholder="e.g., 999" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', marginBottom: '0.5rem' }} />
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Set minimum cart value to avail this offer</div>
+                    </div>
+                  </div>
+
+                  {/* 3. Applicability */}
+                  <div className="admin-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
+                      <ListChecks size={16} /> 3. Applicability
+                    </div>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Apply To *</label>
+                      <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
+                        <option>All Products</option>
+                        <option>Specific Categories</option>
+                        <option>Specific Products</option>
+                      </select>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Categories (Optional)</label>
+                        <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
+                          <option>Select categories</option>
+                        </select>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Products (Optional)</label>
+                        <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
+                          <option>Select products</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 4. Schedule */}
+                  <div className="admin-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
+                      <CalendarRange size={16} /> 4. Schedule
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Start Date *</label>
+                        <div style={{ position: 'relative' }}>
+                          <Calendar size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+                          <input type="text" placeholder="01/11/2025" style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.25rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                        </div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>End Date *</label>
+                        <div style={{ position: 'relative' }}>
+                          <Calendar size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
+                          <input type="text" placeholder="15/11/2025" style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.25rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Status</label>
+                      <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
+                        <option>Scheduled</option>
+                        <option>Active</option>
+                        <option>Draft</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* 5. Display Settings */}
+                  <div className="admin-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
+                      <MonitorPlay size={16} /> 5. Display Settings
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Festival Banner</label>
+                        <div style={{ border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '1rem', textAlign: 'center', cursor: 'pointer', background: '#f8fafc' }}>
+                          <UploadCloud size={24} color="#94a3b8" style={{ margin: '0 auto 0.5rem' }} />
+                          <div style={{ fontSize: '0.75rem', color: '#4f46e5', fontWeight: 500 }}>Click to upload banner</div>
+                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.25rem' }}>JPG, PNG or WEBP (Max 2MB)</div>
+                        </div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Banner Text (Optional)</label>
+                        <textarea rows="3" placeholder="e.g., Big Savings on Diwali!" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer' }}>
+                        <input type="checkbox" defaultChecked style={{ accentColor: '#e11d48' }} /> Show Festival Badge
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer' }}>
+                        <input type="checkbox" defaultChecked style={{ accentColor: '#e11d48' }} /> Show Countdown Timer
+                      </label>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer' }}>
+                        <input type="checkbox" defaultChecked style={{ accentColor: '#e11d48' }} /> Feature on Homepage
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* 6. Usage Rules */}
+                  <div className="admin-card" style={{ padding: '1.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
+                      <ShieldCheck size={16} /> 6. Usage Rules
+                    </div>
+                    <div style={{ marginBottom: '1rem' }}>
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Coupon Code (Optional)</label>
+                      <input type="text" placeholder="e.g., DIWALI20" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Usage Limit (Overall)</label>
+                        <input type="text" placeholder="e.g., 1000" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Per User Limit</label>
+                        <input type="text" placeholder="e.g., 1" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', marginBottom: '0.25rem' }} />
+                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>How many times a user can use this offer</div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Right Sidebar - Preview Card */}
+                <div style={{ width: '320px' }}>
+                  <div className="admin-card" style={{ position: 'sticky', top: '2rem' }}>
+                    <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, fontSize: '0.875rem' }}>
+                      <Eye size={16} /> Offer Preview
+                    </div>
+                    
+                    <div style={{ padding: '1.5rem' }}>
+                      {/* Banner Mockup */}
+                      <div style={{ background: 'linear-gradient(135deg, #7f1d1d, #e11d48)', borderRadius: '8px', padding: '1.5rem', color: 'white', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ position: 'absolute', right: '-10%', bottom: '-20%', fontSize: '4rem', opacity: 0.2 }}>🪔</div>
+                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.2)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, marginBottom: '1rem', letterSpacing: '0.5px' }}>
+                          <PartyPopper size={10} /> DIWALI DHAMAKA
+                        </div>
+                        <div style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1.1, marginBottom: '0.5rem' }}>20% OFF</div>
+                        <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '1rem' }}>On all eligible products</div>
+                        <div style={{ display: 'inline-block', background: 'rgba(0,0,0,0.3)', padding: '0.35rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 500 }}>
+                          Min. Order ₹999
+                        </div>
+                      </div>
+
+                      {/* Details Mockup */}
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
+                            <CalendarRange size={14} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>Validity</div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>01 Nov 2025 - 15 Nov 2025</div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
+                            <ListChecks size={14} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>Applies To</div>
+                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Bangles, Gift Hampers & more</div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
+                            <Ticket size={14} />
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>Coupon Code</div>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0f172a', letterSpacing: '1px' }}>DIWALI20</div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
+                        <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.875rem', background: '#dcfce7', padding: '0.25rem 0.75rem', borderRadius: '99px' }}>Active</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Action Buttons */}
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem', padding: '1rem 0' }}>
+                <button onClick={() => setIsAddingFestival(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #fecdd3', background: '#fff1f2', color: '#e11d48', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Save size={16} /> Save Draft
+                </button>
+                <button onClick={() => setIsAddingFestival(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#e11d48', color: 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Rocket size={16} /> Launch Offer
+                </button>
               </div>
             </div>
           )}
