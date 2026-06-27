@@ -11,6 +11,7 @@ const User = require('./models/User');
 const Product = require('./models/Product');
 const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
+const festivalRoutes = require('./routes/festivals');
 const app = express();
 
 // Middleware
@@ -911,6 +912,7 @@ mongoose.connect(process.env.MONGODB_URI)
 app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
 app.use('/categories', categoryRoutes);
+app.use('/festivals', festivalRoutes);
 
 app.get('/', (req, res) => {
   res.send('Banglex API is running...');

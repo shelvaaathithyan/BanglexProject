@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Home, Package, FolderOpen, Layers, ShoppingCart, CreditCard, 
   Archive, Users, Tag, Star, Radio, BarChart2, UsersRound, 
   Settings, FileText, Search, ExternalLink, Bell, CheckCircle, 
   ShoppingBag, HelpCircle, TrendingUp, TrendingDown, ArrowUpRight,
-  ChevronRight, Heart, Plus, Edit, Trash2, MoreVertical, Filter,
-  PartyPopper, Calendar, Percent, Eye, UploadCloud, CheckSquare,
+  ChevronRight, ChevronDown, Heart, Plus, Edit, Trash2, MoreVertical, Filter,
+  PartyPopper, Calendar, Percent, Eye, UploadCloud, CheckSquare, Square,
   Image as ImageIcon, Ticket, Save, Rocket, AlertCircle, Info, 
   ListChecks, CalendarRange, MonitorPlay, ShieldCheck
 } from 'lucide-react';
@@ -32,13 +32,93 @@ const mockServices = [
   { id: 3, name: 'Design Studio', duration: 'Consultation', price: '₹500', bookings: 28 }
 ];
 
-const mockFestivals = [
-  { id: 1, name: 'Diwali Dhamaka', desc: 'Flat discount on all services', festival: 'Diwali', discount: '20% OFF', validity: '01 Nov - 15 Nov 2025', minOrder: '₹999', status: 'Active', icon: '🪔' },
-  { id: 2, name: 'Christmas Special', desc: 'Discount on gift hampers', festival: 'Christmas', discount: '15% OFF', validity: '20 Dec - 31 Dec 2025', minOrder: '₹799', status: 'Active', icon: '🎄' },
-  { id: 3, name: 'Pongal Offer', desc: 'Special for festive season', festival: 'Pongal', discount: '12% OFF', validity: '10 Jan - 16 Jan 2026', minOrder: '₹599', status: 'Scheduled', icon: '🌾' },
-  { id: 4, name: 'Holi Bash', desc: 'Colorful discounts on services', festival: 'Holi', discount: '18% OFF', validity: '13 Mar - 20 Mar 2026', minOrder: '₹699', status: 'Upcoming', icon: '🎨' },
-  { id: 5, name: 'Easter Treats', desc: 'Hampers & decor discounts', festival: 'Easter', discount: '10% OFF', validity: '03 Apr - 10 Apr 2026', minOrder: '₹499', status: 'Upcoming', icon: '🐰' }
-];
+const SearchableDropdown = ({ options, name, value = [], onChange, placeholder, disabled }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+        setSearchTerm('');
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const filteredOptions = options.filter(opt => opt.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+  const handleSelect = (optName) => {
+    let newValue;
+    if (value.includes(optName)) {
+      newValue = value.filter(v => v !== optName);
+    } else {
+      newValue = [...value, optName];
+    }
+    onChange({ target: { name, value: newValue } });
+  };
+
+  const displayValue = value.length > 0 ? value.join(', ') : '';
+
+  return (
+    <div ref={dropdownRef} style={{ position: 'relative', width: '100%' }}>
+      <div 
+        style={{ 
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', 
+          fontSize: '0.875rem', background: disabled ? '#f8fafc' : 'white', 
+          color: disabled ? '#94a3b8' : 'inherit', 
+          cursor: disabled ? 'not-allowed' : 'text',
+          gap: '4px'
+        }}
+        onClick={() => {
+          if (!disabled) {
+            setIsOpen(true);
+          }
+        }}
+      >
+        <input 
+          type="text" 
+          value={isOpen ? searchTerm : displayValue}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            setIsOpen(true);
+          }}
+          placeholder={value.length === 0 ? placeholder : ''}
+          disabled={disabled}
+          style={{ border: 'none', outline: 'none', background: 'transparent', flex: 1, minWidth: 0, color: 'inherit', fontSize: 'inherit', cursor: disabled ? 'not-allowed' : 'text' }}
+        />
+        <ChevronDown size={16} onClick={(e) => { e.stopPropagation(); if (!disabled) { setIsOpen(!isOpen); if(!isOpen) setSearchTerm(''); } }} style={{ cursor: disabled ? 'not-allowed' : 'pointer', color: '#94a3b8', flexShrink: 0 }} />
+      </div>
+
+      {isOpen && (
+        <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: '0.25rem', background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)', zIndex: 50, maxHeight: '200px', overflowY: 'auto' }}>
+          {filteredOptions.length > 0 ? (
+            filteredOptions.map(opt => {
+              const isSelected = value.includes(opt.name);
+              return (
+                <div 
+                  key={opt._id || opt.id || opt.name}
+                  onClick={(e) => { e.stopPropagation(); handleSelect(opt.name); }}
+                  style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', cursor: 'pointer', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: isSelected ? '#f8fafc' : 'white', fontWeight: isSelected ? 500 : 400 }}
+                  onMouseEnter={(e) => e.target.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => e.target.style.background = isSelected ? '#f8fafc' : 'white'}
+                >
+                  {opt.name}
+                  {isSelected ? <CheckSquare size={16} color="#3b82f6" /> : <Square size={16} color="#cbd5e1" />}
+                </div>
+              );
+            })
+          ) : (
+            <div style={{ padding: '0.75rem 1rem', fontSize: '0.875rem', color: '#94a3b8', textAlign: 'center' }}>No results found</div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -89,6 +169,7 @@ const AdminDashboard = () => {
 
   // Category Modal State
   const [allCategories, setAllCategories] = useState([]);
+  const [allFestivals, setAllFestivals] = useState([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isAddingCategory, setIsAddingCategory] = useState(false);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -106,22 +187,101 @@ const AdminDashboard = () => {
     description: '',
     discountType: '',
     discountValue: '',
-    minOrder: '',
     applyTo: 'All Products',
-    categories: '',
-    products: '',
+    categories: [],
+    products: [],
     startDate: '',
+    startTime: '',
     endDate: '',
-    status: 'Scheduled',
-    banner: null,
+    endTime: '',
+    desktopBanner: null,
+    mobileBanner: null,
     bannerText: '',
     showBadge: true,
     showTimer: true,
-    featureOnHome: true,
-    couponCode: '',
-    usageLimit: '',
-    perUserLimit: ''
+    featureOnHome: true
   });
+
+  const handleCancelFestival = () => {
+    setIsAddingFestival(false);
+    setNewFestivalForm({
+      name: '',
+      description: '',
+      discountType: '',
+      discountValue: '',
+      applyTo: 'All Products',
+      categories: [],
+      products: [],
+      startDate: '',
+      startTime: '',
+      endDate: '',
+      endTime: '',
+      desktopBanner: null,
+      mobileBanner: null,
+      bannerText: '',
+      showBadge: true,
+      showTimer: true,
+      featureOnHome: true
+    });
+  };
+
+  const handleFestivalInputChange = (e) => {
+    const { name, value } = e.target;
+    setNewFestivalForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleLaunchOffer = async (e) => {
+    e.preventDefault();
+    if (!newFestivalForm.name || !newFestivalForm.discountType || !newFestivalForm.discountValue) {
+      alert("Please fill in the required fields");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      Object.keys(newFestivalForm).forEach(key => {
+        if (key === 'desktopBanner' || key === 'mobileBanner') {
+          if (newFestivalForm[key]) {
+            formData.append(key, newFestivalForm[key]);
+          }
+        } else if (key === 'categories') {
+          const categoryIds = newFestivalForm.categories.map(catName => {
+            const found = allCategories.find(c => c.name === catName);
+            return found ? (found._id || found.id) : null;
+          }).filter(id => id !== null);
+          formData.append('categories', JSON.stringify(categoryIds));
+        } else if (key === 'products') {
+          const productIds = newFestivalForm.products.map(prodName => {
+            const found = allProducts.find(p => p.name === prodName);
+            return found ? (found._id || found.id) : null;
+          }).filter(id => id !== null);
+          formData.append('products', JSON.stringify(productIds));
+        } else {
+          formData.append(key, newFestivalForm[key]);
+        }
+      });
+      
+      // Explicitly set the new festival as active
+      formData.append('isActive', true);
+
+      const res = await fetch(`${API_BASE}/festivals`, {
+        method: 'POST',
+        body: formData
+      });
+
+      if (res.ok) {
+        alert("Festival offer launched successfully!");
+        const newFest = await res.json();
+        setAllFestivals(prev => [newFest, ...prev]);
+        handleCancelFestival();
+      } else {
+        alert("Failed to launch festival offer.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error launching festival offer");
+    }
+  };
 
   const handleCategoryInputChange = (e) => {
     const { name, value } = e.target;
@@ -335,9 +495,45 @@ const AdminDashboard = () => {
       }
     };
 
+    const fetchFestivals = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/festivals`);
+        if (res.ok) {
+          const data = await res.json();
+          setAllFestivals(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch festivals:', err);
+      }
+    };
+
     fetchProducts();
     fetchCategories();
+    fetchFestivals();
   }, []);
+
+  const handleDeleteFestival = async (festivalId) => {
+    if (!window.confirm("Are you sure you want to delete this festival?")) return;
+    try {
+      const res = await fetch(`${API_BASE}/festivals/${festivalId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setAllFestivals(prev => prev.filter(f => f._id !== festivalId));
+      } else {
+        alert("Failed to delete festival.");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const getFestivalStatus = (fest) => {
+    const now = new Date();
+    const start = new Date(`${fest.startDate}T${fest.startTime}`);
+    const end = new Date(`${fest.endDate}T${fest.endTime}`);
+    if (now < start) return 'Scheduled';
+    if (now > end) return 'Completed';
+    return 'On-Going';
+  };
 
   const filteredProducts = allProducts.filter(product => {
     const nameStr = product.name ? product.name.toLowerCase() : '';
@@ -939,15 +1135,15 @@ const AdminDashboard = () => {
                 </button>
               </div>
 
-              {/* Top Metrics Row for Festivals */}
-              <div className="admin-metrics-grid" style={{ marginBottom: '2rem', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem' }}>
+              {/* Stats Cards */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1.5rem', marginBottom: '2rem' }}>
                 <div className="admin-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#ffe4e6', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}>
                     <Tag size={24} />
                   </div>
                   <div>
                     <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Active Offers</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>3</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>{allFestivals.filter(f => getFestivalStatus(f) === 'On-Going').length}</div>
                     <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Currently running</div>
                   </div>
                 </div>
@@ -957,7 +1153,7 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Upcoming Offers</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>2</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>{allFestivals.filter(f => getFestivalStatus(f) === 'Scheduled').length}</div>
                     <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Scheduled</div>
                   </div>
                 </div>
@@ -966,9 +1162,9 @@ const AdminDashboard = () => {
                     <Percent size={24} />
                   </div>
                   <div>
-                    <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Total Discounts</div>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>12% - 25%</div>
-                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Across all offers</div>
+                    <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Total Festivals</div>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>{allFestivals.length}</div>
+                    <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Created across platform</div>
                   </div>
                 </div>
                 <div className="admin-card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -977,7 +1173,7 @@ const AdminDashboard = () => {
                   </div>
                   <div>
                     <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Total Usage</div>
-                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>156</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>0</div>
                     <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Redemptions</div>
                   </div>
                 </div>
@@ -1007,57 +1203,67 @@ const AdminDashboard = () => {
                   <thead>
                     <tr>
                       <th style={{ paddingLeft: '1.5rem' }}>Offer Name</th>
-                      <th>Festival</th>
-                      <th>Discount</th>
-                      <th>Validity</th>
-                      <th>Min. Order</th>
+                      <th>Discount Type</th>
+                      <th>Discount Value</th>
+                      <th>Applied To</th>
+                      <th>Start Date</th>
+                      <th>End Date</th>
                       <th>Status</th>
                       <th style={{ textAlign: 'center' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {mockFestivals.map((fest, idx) => (
-                      <tr key={idx} style={{ borderBottom: idx !== mockFestivals.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                    {allFestivals.map((fest, idx) => {
+                      const status = getFestivalStatus(fest);
+                      return (
+                      <tr key={fest._id || idx} style={{ borderBottom: idx !== allFestivals.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
                         <td style={{ paddingLeft: '1.5rem', paddingVertical: '1rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                             <div style={{ width: '40px', height: '40px', borderRadius: '8px', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>
-                              {fest.icon}
+                              🎉
                             </div>
                             <div>
                               <div style={{ fontWeight: 600, color: '#0f172a' }}>{fest.name}</div>
-                              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>{fest.desc}</div>
+                              <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>{fest.description}</div>
                             </div>
                           </div>
                         </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#475569', fontSize: '0.875rem' }}>
-                            <Calendar size={14} color="#94a3b8" /> {fest.festival}
-                          </div>
+                        <td style={{ color: '#475569', fontSize: '0.875rem' }}>
+                          {fest.discountType}
                         </td>
-                        <td style={{ fontWeight: 600, color: '#16a34a' }}>{fest.discount}</td>
-                        <td style={{ fontSize: '0.875rem', color: '#475569' }}>{fest.validity}</td>
-                        <td style={{ fontWeight: 500, color: '#0f172a' }}>{fest.minOrder}</td>
+                        <td style={{ fontWeight: 600, color: '#16a34a' }}>
+                          {fest.discountValue} {fest.discountType === 'Percentage (%)' ? '%' : '₹'} OFF
+                        </td>
+                        <td style={{ fontSize: '0.875rem', color: '#475569' }}>
+                          {fest.applyTo}
+                        </td>
+                        <td style={{ fontSize: '0.875rem', color: '#475569' }}>
+                          {fest.startDate}
+                        </td>
+                        <td style={{ fontSize: '0.875rem', color: '#475569' }}>
+                          {fest.endDate}
+                        </td>
                         <td>
                           <span style={{ 
                             padding: '0.25rem 0.75rem', 
                             borderRadius: '99px', 
                             fontSize: '0.75rem', 
                             fontWeight: 600,
-                            background: fest.status === 'Active' ? '#dcfce7' : fest.status === 'Scheduled' ? '#fef3c7' : '#e0e7ff', 
-                            color: fest.status === 'Active' ? '#16a34a' : fest.status === 'Scheduled' ? '#d97706' : '#4f46e5'
+                            background: status === 'On-Going' ? '#dcfce7' : status === 'Scheduled' ? '#fef3c7' : '#e0e7ff', 
+                            color: status === 'On-Going' ? '#16a34a' : status === 'Scheduled' ? '#d97706' : '#4f46e5'
                           }}>
-                            {fest.status}
+                            {status}
                           </span>
                         </td>
                         <td>
                           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
                             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><Edit size={16} /></button>
                             <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><Eye size={16} /></button>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                            <button onClick={() => handleDeleteFestival(fest._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
                           </div>
                         </td>
                       </tr>
-                    ))}
+                    )})}
                   </tbody>
                 </table>
               </div>
@@ -1073,7 +1279,7 @@ const AdminDashboard = () => {
 
               <div style={{ display: 'flex', gap: '2rem', alignItems: 'flex-start' }}>
                 {/* Form Sections Grid */}
-                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div style={{ flex: 1, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem', alignItems: 'start' }}>
                   
                   {/* 1. Basic Information */}
                   <div className="admin-card" style={{ padding: '1.5rem' }}>
@@ -1081,12 +1287,12 @@ const AdminDashboard = () => {
                       <Info size={16} /> 1. Basic Information
                     </div>
                     <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Festival Name *</label>
-                      <input type="text" placeholder="e.g., Diwali, Christmas, Pongal" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Offer Name *</label>
+                      <input type="text" name="name" value={newFestivalForm.name} onChange={handleFestivalInputChange} placeholder="e.g., Diwali, Christmas, Pongal" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
                     </div>
                     <div>
                       <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Description</label>
-                      <textarea rows="3" placeholder="Describe the offer and its benefits..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                      <textarea rows="3" name="description" value={newFestivalForm.description} onChange={handleFestivalInputChange} placeholder="Describe the offer and its benefits..." style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
                     </div>
                   </div>
 
@@ -1095,24 +1301,19 @@ const AdminDashboard = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
                       <Percent size={16} /> 2. Discount Configuration
                     </div>
-                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '1rem' }}>
                       <div style={{ flex: 1 }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Discount Type *</label>
-                        <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
-                          <option>Select discount type</option>
-                          <option>Percentage (%)</option>
-                          <option>Fixed Amount (₹)</option>
+                        <select name="discountType" value={newFestivalForm.discountType} onChange={handleFestivalInputChange} style={{ width: '100%', padding: '0.75rem 2rem 0.75rem 0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white', textOverflow: 'ellipsis' }}>
+                          <option value="">Select type</option>
+                          <option value="Percentage (%)">Percentage (%)</option>
+                          <option value="Fixed Amount (₹)">Fixed Amount (₹)</option>
                         </select>
                       </div>
                       <div style={{ flex: 1 }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Discount Value *</label>
-                        <input type="text" placeholder="e.g., 20 or 500" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                        <input type="text" name="discountValue" value={newFestivalForm.discountValue} onChange={handleFestivalInputChange} placeholder="e.g., 20 or 500" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
                       </div>
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Minimum Order Value (₹)</label>
-                      <input type="text" placeholder="e.g., 999" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', marginBottom: '0.5rem' }} />
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Set minimum cart value to avail this offer</div>
                     </div>
                   </div>
 
@@ -1123,24 +1324,34 @@ const AdminDashboard = () => {
                     </div>
                     <div style={{ marginBottom: '1rem' }}>
                       <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Apply To *</label>
-                      <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
-                        <option>All Products</option>
-                        <option>Specific Categories</option>
-                        <option>Specific Products</option>
+                      <select name="applyTo" value={newFestivalForm.applyTo} onChange={handleFestivalInputChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
+                        <option value="All Products">All Products</option>
+                        <option value="Specific Categories">Specific Categories</option>
+                        <option value="Specific Products">Specific Products</option>
                       </select>
                     </div>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                       <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Categories (Optional)</label>
-                        <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
-                          <option>Select categories</option>
-                        </select>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: newFestivalForm.applyTo !== 'Specific Categories' ? '#94a3b8' : '#0f172a', marginBottom: '0.5rem' }}>Categories</label>
+                        <SearchableDropdown 
+                          name="categories"
+                          options={allCategories}
+                          value={newFestivalForm.categories}
+                          onChange={handleFestivalInputChange}
+                          disabled={newFestivalForm.applyTo !== 'Specific Categories'}
+                          placeholder="Select categories"
+                        />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Products (Optional)</label>
-                        <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
-                          <option>Select products</option>
-                        </select>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: newFestivalForm.applyTo !== 'Specific Products' ? '#94a3b8' : '#0f172a', marginBottom: '0.5rem' }}>Products</label>
+                        <SearchableDropdown 
+                          name="products"
+                          options={allProducts}
+                          value={newFestivalForm.products}
+                          onChange={handleFestivalInputChange}
+                          disabled={newFestivalForm.applyTo !== 'Specific Products'}
+                          placeholder="Select products"
+                        />
                       </div>
                     </div>
                   </div>
@@ -1153,152 +1364,86 @@ const AdminDashboard = () => {
                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                       <div style={{ flex: 1 }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Start Date *</label>
-                        <div style={{ position: 'relative' }}>
-                          <Calendar size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
-                          <input type="text" placeholder="01/11/2025" style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.25rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                        <div>
+                          <input type="date" name="startDate" value={newFestivalForm.startDate} onChange={handleFestivalInputChange} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', color: newFestivalForm.startDate ? '#0f172a' : '#94a3b8' }} />
                         </div>
                       </div>
                       <div style={{ flex: 1 }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>End Date *</label>
-                        <div style={{ position: 'relative' }}>
-                          <Calendar size={14} color="#94a3b8" style={{ position: 'absolute', left: '0.75rem', top: '50%', transform: 'translateY(-50%)' }} />
-                          <input type="text" placeholder="15/11/2025" style={{ width: '100%', padding: '0.75rem 1rem 0.75rem 2.25rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                        <div>
+                          <input type="date" name="endDate" value={newFestivalForm.endDate} onChange={handleFestivalInputChange} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', color: newFestivalForm.endDate ? '#0f172a' : '#94a3b8' }} />
                         </div>
                       </div>
                     </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Status</label>
-                      <select style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', background: 'white' }}>
-                        <option>Scheduled</option>
-                        <option>Active</option>
-                        <option>Draft</option>
-                      </select>
+                    <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Start Time *</label>
+                        <div>
+                          <input type="time" name="startTime" value={newFestivalForm.startTime} onChange={handleFestivalInputChange} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', color: newFestivalForm.startTime ? '#0f172a' : '#94a3b8' }} />
+                        </div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>End Time *</label>
+                        <div>
+                          <input type="time" name="endTime" value={newFestivalForm.endTime} onChange={handleFestivalInputChange} style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', color: newFestivalForm.endTime ? '#0f172a' : '#94a3b8' }} />
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   {/* 5. Display Settings */}
-                  <div className="admin-card" style={{ padding: '1.5rem' }}>
+                  <div className="admin-card" style={{ padding: '1.5rem', gridColumn: 'span 2' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
                       <MonitorPlay size={16} /> 5. Display Settings
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem' }}>
                       <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Festival Banner</label>
-                        <div style={{ border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '1rem', textAlign: 'center', cursor: 'pointer', background: '#f8fafc' }}>
-                          <UploadCloud size={24} color="#94a3b8" style={{ margin: '0 auto 0.5rem' }} />
-                          <div style={{ fontSize: '0.75rem', color: '#4f46e5', fontWeight: 500 }}>Click to upload banner</div>
-                          <div style={{ fontSize: '0.65rem', color: '#94a3b8', marginTop: '0.25rem' }}>JPG, PNG or WEBP (Max 2MB)</div>
+                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Festival Banners</label>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <label style={{ flex: 1, display: 'block', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '0.75rem', textAlign: 'center', cursor: 'pointer', background: '#f8fafc' }}>
+                            <input type="file" style={{ display: 'none' }} accept="image/*" onChange={(e) => setNewFestivalForm(prev => ({...prev, desktopBanner: e.target.files[0]}))} />
+                            <UploadCloud size={20} color="#94a3b8" style={{ margin: '0 auto 0.25rem' }} />
+                            <div style={{ fontSize: '0.7rem', color: '#4f46e5', fontWeight: 500 }}>
+                              {newFestivalForm.desktopBanner ? newFestivalForm.desktopBanner.name : "Desktop Banner"}
+                            </div>
+                          </label>
+                          <label style={{ flex: 1, display: 'block', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '0.75rem', textAlign: 'center', cursor: 'pointer', background: '#f8fafc' }}>
+                            <input type="file" style={{ display: 'none' }} accept="image/*" onChange={(e) => setNewFestivalForm(prev => ({...prev, mobileBanner: e.target.files[0]}))} />
+                            <UploadCloud size={20} color="#94a3b8" style={{ margin: '0 auto 0.25rem' }} />
+                            <div style={{ fontSize: '0.7rem', color: '#4f46e5', fontWeight: 500 }}>
+                              {newFestivalForm.mobileBanner ? newFestivalForm.mobileBanner.name : "Mobile Banner"}
+                            </div>
+                          </label>
                         </div>
                       </div>
                       <div style={{ flex: 1 }}>
                         <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Banner Text (Optional)</label>
-                        <textarea rows="3" placeholder="e.g., Big Savings on Diwali!" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
+                        <textarea rows="3" name="bannerText" value={newFestivalForm.bannerText} onChange={handleFestivalInputChange} placeholder="e.g., Big Savings on Diwali!" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
                       </div>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem' }}>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer' }}>
-                        <input type="checkbox" defaultChecked style={{ accentColor: '#e11d48' }} /> Show Festival Badge
+                        <input type="checkbox" name="showBadge" checked={newFestivalForm.showBadge} onChange={(e) => setNewFestivalForm(prev => ({...prev, showBadge: e.target.checked}))} style={{ accentColor: '#e11d48' }} /> Show Festival Badge
                       </label>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer' }}>
-                        <input type="checkbox" defaultChecked style={{ accentColor: '#e11d48' }} /> Show Countdown Timer
+                        <input type="checkbox" name="showTimer" checked={newFestivalForm.showTimer} onChange={(e) => setNewFestivalForm(prev => ({...prev, showTimer: e.target.checked}))} style={{ accentColor: '#e11d48' }} /> Show Countdown Timer
                       </label>
                       <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.75rem', color: '#475569', cursor: 'pointer' }}>
-                        <input type="checkbox" defaultChecked style={{ accentColor: '#e11d48' }} /> Feature on Homepage
+                        <input type="checkbox" name="featureOnHome" checked={newFestivalForm.featureOnHome} onChange={(e) => setNewFestivalForm(prev => ({...prev, featureOnHome: e.target.checked}))} style={{ accentColor: '#e11d48' }} /> Feature on Homepage
                       </label>
                     </div>
                   </div>
 
-                  {/* 6. Usage Rules */}
-                  <div className="admin-card" style={{ padding: '1.5rem' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, marginBottom: '1rem', fontSize: '0.875rem' }}>
-                      <ShieldCheck size={16} /> 6. Usage Rules
-                    </div>
-                    <div style={{ marginBottom: '1rem' }}>
-                      <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Coupon Code (Optional)</label>
-                      <input type="text" placeholder="e.g., DIWALI20" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
-                    </div>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Usage Limit (Overall)</label>
-                        <input type="text" placeholder="e.g., 1000" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none' }} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, color: '#0f172a', marginBottom: '0.5rem' }}>Per User Limit</label>
-                        <input type="text" placeholder="e.g., 1" style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0', fontSize: '0.875rem', outline: 'none', marginBottom: '0.25rem' }} />
-                        <div style={{ fontSize: '0.65rem', color: '#64748b' }}>How many times a user can use this offer</div>
-                      </div>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* Right Sidebar - Preview Card */}
-                <div style={{ width: '320px' }}>
-                  <div className="admin-card" style={{ position: 'sticky', top: '2rem' }}>
-                    <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#e11d48', fontWeight: 600, fontSize: '0.875rem' }}>
-                      <Eye size={16} /> Offer Preview
-                    </div>
-                    
-                    <div style={{ padding: '1.5rem' }}>
-                      {/* Banner Mockup */}
-                      <div style={{ background: 'linear-gradient(135deg, #7f1d1d, #e11d48)', borderRadius: '8px', padding: '1.5rem', color: 'white', marginBottom: '1.5rem', position: 'relative', overflow: 'hidden' }}>
-                        <div style={{ position: 'absolute', right: '-10%', bottom: '-20%', fontSize: '4rem', opacity: 0.2 }}>🪔</div>
-                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem', background: 'rgba(255,255,255,0.2)', padding: '0.25rem 0.5rem', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600, marginBottom: '1rem', letterSpacing: '0.5px' }}>
-                          <PartyPopper size={10} /> DIWALI DHAMAKA
-                        </div>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, lineHeight: 1.1, marginBottom: '0.5rem' }}>20% OFF</div>
-                        <div style={{ fontSize: '0.875rem', opacity: 0.9, marginBottom: '1rem' }}>On all eligible products</div>
-                        <div style={{ display: 'inline-block', background: 'rgba(0,0,0,0.3)', padding: '0.35rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 500 }}>
-                          Min. Order ₹999
-                        </div>
-                      </div>
-
-                      {/* Details Mockup */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
-                            <CalendarRange size={14} />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>Validity</div>
-                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>01 Nov 2025 - 15 Nov 2025</div>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
-                            <ListChecks size={14} />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>Applies To</div>
-                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Bangles, Gift Hampers & more</div>
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', gap: '1rem' }}>
-                          <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#f8fafc', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#64748b', flexShrink: 0 }}>
-                            <Ticket size={14} />
-                          </div>
-                          <div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 500, color: '#0f172a' }}>Coupon Code</div>
-                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#0f172a', letterSpacing: '1px' }}>DIWALI20</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #e2e8f0' }}>
-                        <span style={{ color: '#16a34a', fontWeight: 600, fontSize: '0.875rem', background: '#dcfce7', padding: '0.25rem 0.75rem', borderRadius: '99px' }}>Active</span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               </div>
               
               {/* Action Buttons */}
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem', padding: '1rem 0' }}>
-                <button onClick={() => setIsAddingFestival(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
+                <button onClick={handleCancelFestival} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}>Cancel</button>
                 <button style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #fecdd3', background: '#fff1f2', color: '#e11d48', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Save size={16} /> Save Draft
                 </button>
-                <button onClick={() => setIsAddingFestival(false)} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#e11d48', color: 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <button onClick={handleLaunchOffer} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#e11d48', color: 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Rocket size={16} /> Launch Offer
                 </button>
               </div>

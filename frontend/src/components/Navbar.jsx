@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Search, User, ShoppingBag, Menu, X, LogOut, Plus, Minus } from 'lucide-react';
+import { Search, User, ShoppingBag, Menu, X, LogOut, Plus, Minus, Sparkles, Gift } from 'lucide-react';
 import API_BASE from '../config/api';
+import { isFestivalActive } from '../utils/festivalPrice';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,6 +25,10 @@ const Navbar = () => {
   // Cart States
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
+
+  // Festival States
+  const [activeFestival, setActiveFestival] = useState(null);
+  const [festivalNotifDismissed, setFestivalNotifDismissed] = useState(false);
 
   const fetchProfileStatus = async () => {
     const token = localStorage.getItem('token');
@@ -110,6 +115,38 @@ const Navbar = () => {
       window.removeEventListener('openCartDrawer', handleOpenCart);
     };
   }, []);
+
+  // Fetch active festival and check expiration
+  useEffect(() => {
+    const fetchActiveFestival = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/festivals/active`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && isFestivalActive(data)) {
+            setActiveFestival(data);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching active festival:', err);
+      }
+    };
+    fetchActiveFestival();
+
+    // Check every minute if the festival has expired or started
+    const interval = setInterval(() => {
+      // If we don't have one active, maybe we should refetch? Or we can just let it be null until a page refresh.
+      // But if we already have it in state, we should clear it when it expires:
+      if (activeFestival) {
+        if (!isFestivalActive(activeFestival)) {
+          setActiveFestival(null);
+        }
+      } else {
+         fetchActiveFestival();
+      }
+    }, 60000);
+    return () => clearInterval(interval);
+  }, [activeFestival]);
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -244,7 +281,15 @@ const Navbar = () => {
       <div className="store-navbar-wrapper" ref={navbarRef}>
         {/* Top Banner */}
         <div className="top-banner">
-          <p>🚚 FREE SHIPPING ON ALL ORDERS ABOVE ₹999!</p>
+          {activeFestival ? (
+            <p>
+              <Sparkles size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+              <span className="festival-name-golden">{activeFestival.name}</span>
+              {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage' ? '%' : '₹'} OFF!
+            </p>
+          ) : (
+            <p>🚚 FREE SHIPPING ON ALL ORDERS ABOVE ₹999!</p>
+          )}
         </div>
 
         <nav className="store-navbar">
@@ -442,6 +487,19 @@ const Navbar = () => {
                   <Link to="/category/organiser" className="category-link" onClick={() => setIsMobileMenuOpen(false)}>
                     DESIGN STUDIO
                   </Link>
+
+                  {/* Festival Link in Mobile Menu */}
+                  {activeFestival && (
+                    <div style={{ padding: '1rem 0.5rem', borderTop: '1px solid #e2e8f0' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <Gift size={16} color="#d4af37" />
+                        <span className="festival-name-golden" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{activeFestival.name}</span>
+                      </div>
+                      <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem', paddingLeft: '1.5rem' }}>
+                        {activeFestival.discountValue}{activeFestival.discountType === 'Percentage' ? '%' : '₹'} OFF
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 {/* Mobile Only Icons inside menu */}
@@ -636,6 +694,29 @@ const Navbar = () => {
             )}
           </div>
         </>
+      )}
+
+      {/* Festival Side Notification */}
+      {activeFestival && isLoggedIn && !festivalNotifDismissed && (
+        <div className="festival-side-notification">
+          <button className="festival-notif-close" onClick={() => setFestivalNotifDismissed(true)} aria-label="Close notification">
+            <X size={16} />
+          </button>
+          <div className="festival-notif-icon">
+            <Gift size={28} color="#d4af37" />
+          </div>
+          <div className="festival-notif-content">
+            <span className="festival-name-golden" style={{ fontSize: '1rem', fontWeight: 700 }}>{activeFestival.name}</span>
+            <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#475569', lineHeight: 1.4 }}>
+              Get <strong>{activeFestival.discountValue}{activeFestival.discountType === 'Percentage' ? '%' : '₹'}</strong> OFF on {activeFestival.applyTo === 'All Products' ? 'all products' : 'selected items'}!
+            </p>
+            {activeFestival.endDate && (
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.65rem', color: '#94a3b8' }}>
+                Ends: {new Date(`${activeFestival.endDate}T${activeFestival.endTime || '23:59'}`).toLocaleString()}
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </>
   );

@@ -3973,3 +3973,94 @@ body {
 .gallery-grid-item.active {
   border-color: #e91e63;
 }
+
+/* ===== Golden Shining Festival Name Effect ===== */
+@keyframes goldenShine {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.festival-name-golden {
+  background: linear-gradient(
+    90deg,
+    #d4af37 0%,
+    #ffd700 25%,
+    #fff8dc 40%,
+    #ffd700 55%,
+    #d4af37 70%,
+    #b8860b 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: goldenShine 3s linear infinite;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ===== Festival Side Notification ===== */
+@keyframes slideInRight {
+  from { transform: translateX(120%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.festival-side-notification {
+  position: fixed;
+  bottom: 2rem;
+  right: 1.5rem;
+  width: 300px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(212, 175, 55, 0.2);
+  padding: 1.25rem;
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  z-index: 10000;
+  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  border-left: 3px solid #d4af37;
+}
+
+.festival-notif-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 2px;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.festival-notif-close:hover {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.festival-notif-icon {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #fff8dc, #fef3c7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.festival-notif-content {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 768px) {
+  .festival-side-notification {
+    width: calc(100% - 2rem);
+    right: 1rem;
+    bottom: 1rem;
+  }
+}

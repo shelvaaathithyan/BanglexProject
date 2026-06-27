@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import { Star, Heart } from 'lucide-react';
 import gsap from 'gsap';
 import API_BASE from '../config/api';
+import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
 
 const categorySlugMapping = {
   'glass-bangles': 'Glass Bangles',
@@ -30,6 +31,7 @@ const CategoryPage = () => {
   const [filter, setFilter] = useState(''); // price range filter
   const [sort, setSort] = useState(''); // sort order
   const [liked, setLiked] = useState({}); // local liked state
+  const [activeFestival, setActiveFestival] = useState(null);
 
   useEffect(() => {
     // Load initially
@@ -47,6 +49,24 @@ const CategoryPage = () => {
     };
     window.addEventListener('savedLooksUpdated', handleUpdate);
     return () => window.removeEventListener('savedLooksUpdated', handleUpdate);
+  }, []);
+
+  // Fetch active festival
+  useEffect(() => {
+    const fetchActiveFestival = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/festivals/active`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && isFestivalActive(data)) {
+            setActiveFestival(data);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching active festival:', err);
+      }
+    };
+    fetchActiveFestival();
   }, []);
 
   const [actualCategoryName, setActualCategoryName] = useState('');
@@ -259,14 +279,26 @@ const CategoryPage = () => {
                 <div className="product-info">
                   <h3 className="product-name">{product.name}</h3>
                   <div className="product-price-row">
-                    {product.isOnSale && product.salePrice ? (
-                      <>
-                        <span className="sale-price">₹{product.salePrice.toFixed(2)}</span>
-                        <span className="original-price">₹{product.price.toFixed(2)}</span>
-                      </>
-                    ) : (
-                      <span className="sale-price">₹{product.price.toFixed(2)}</span>
-                    )}
+                    {(() => {
+                      const festivalDiscounted = activeFestival ? getFestivalPrice(product.price, activeFestival) : null;
+                      if (festivalDiscounted !== null && festivalDiscounted < product.price) {
+                        return (
+                          <>
+                            <span className="sale-price">₹{festivalDiscounted.toFixed(2)}</span>
+                            <span className="original-price">₹{product.price.toFixed(2)}</span>
+                          </>
+                        );
+                      } else if (product.isOnSale && product.salePrice) {
+                        return (
+                          <>
+                            <span className="sale-price">₹{product.salePrice.toFixed(2)}</span>
+                            <span className="original-price">₹{product.price.toFixed(2)}</span>
+                          </>
+                        );
+                      } else {
+                        return <span className="sale-price">₹{product.price.toFixed(2)}</span>;
+                      }
+                    })()}
                   </div>
                   <div className="product-card-ratings">
                     <div className="stars">

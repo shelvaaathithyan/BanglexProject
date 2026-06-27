@@ -4,6 +4,7 @@ import { Share2, Plus, Minus, Star, Truck, Heart, ShoppingCart, Zap, X } from 'l
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import API_BASE from '../config/api';
+import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
 
 const ProductDetailPage = () => {
   const { productId } = useParams();
@@ -23,6 +24,25 @@ const ProductDetailPage = () => {
   const [error, setError] = useState(null);
   const [shareSuccess, setShareSuccess] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [activeFestival, setActiveFestival] = useState(null);
+
+  // Fetch active festival
+  useEffect(() => {
+    const fetchActiveFestival = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/festivals/active`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && isFestivalActive(data)) {
+            setActiveFestival(data);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching active festival:', err);
+      }
+    };
+    fetchActiveFestival();
+  }, []);
 
   // Load saved state on mount
   useEffect(() => {
@@ -244,15 +264,27 @@ const ProductDetailPage = () => {
              <h1 className="product-title">{product.name}</h1>
              
              <div className="product-price">
-               {product.isOnSale && product.salePrice ? (
-                 <>
-                   <span className="price-sale">₹{product.salePrice.toFixed(2)}</span>
-                   <span className="price-original">₹{product.price.toFixed(2)}</span>
-                 </>
-               ) : (
-                 <span className="price-sale">₹{product.price.toFixed(2)}</span>
-               )}
-             </div>
+                {(() => {
+                  const festivalDiscounted = activeFestival && product ? getFestivalPrice(product.price, activeFestival) : null;
+                  if (festivalDiscounted !== null && festivalDiscounted < product.price) {
+                    return (
+                      <>
+                        <span className="price-sale">₹{festivalDiscounted.toFixed(2)}</span>
+                        <span className="price-original">₹{product.price.toFixed(2)}</span>
+                      </>
+                    );
+                  } else if (product.isOnSale && product.salePrice) {
+                    return (
+                      <>
+                        <span className="price-sale">₹{product.salePrice.toFixed(2)}</span>
+                        <span className="price-original">₹{product.price.toFixed(2)}</span>
+                      </>
+                    );
+                  } else {
+                    return <span className="price-sale">₹{product.price.toFixed(2)}</span>;
+                  }
+                })()}
+              </div>
  
              <div className="product-ratings">
                <div className="stars">

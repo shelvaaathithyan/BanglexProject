@@ -5,11 +5,21 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import gsap from 'gsap';
 import API_BASE from '../config/api';
+import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
 
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState({});
+  const [activeFestival, setActiveFestival] = useState(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     // Load initially
@@ -62,8 +72,35 @@ const HomePage = () => {
       }
     };
 
+    const fetchActiveFestival = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/festivals/active`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.featureOnHome && isFestivalActive(data)) {
+            setActiveFestival(data);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching active festival:', err);
+      }
+    };
+
     fetchPopularProducts();
+    fetchActiveFestival();
   }, []);
+
+  useEffect(() => {
+    let interval;
+    if (activeFestival && (activeFestival.desktopBannerUrl || activeFestival.mobileBannerUrl)) {
+      interval = setInterval(() => {
+        setCurrentSlide((prev) => (prev === 0 ? 1 : 0));
+      }, 2000);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [activeFestival]);
 
   const toggleLike = (e, product) => {
     e.preventDefault();
@@ -188,7 +225,24 @@ const HomePage = () => {
 
       {/* Modern Hero Section */}
       <section className="hero-section" ref={heroRef}>
-        <div className="hero-container">
+        <div 
+          className="hero-container" 
+          style={{ 
+            backgroundImage: `url(${
+              currentSlide === 1 && activeFestival 
+                ? (isMobile && activeFestival.mobileBannerUrl 
+                    ? activeFestival.mobileBannerUrl 
+                    : (activeFestival.desktopBannerUrl || activeFestival.mobileBannerUrl || '/hero-bg.png'))
+                : '/hero-bg.png'
+            })`,
+            transition: 'background-image 0.5s ease-in-out'
+          }}
+        >
+          {currentSlide === 1 && activeFestival && activeFestival.showBadge && activeFestival.bannerText && (
+            <div style={{ position: 'absolute', top: '2rem', right: '3rem', backgroundColor: '#e11d48', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '1.2rem', zIndex: 10, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+              {activeFestival.bannerText}
+            </div>
+          )}
           <div className="hero-content">
             <div className="hero-tag-wrapper">
               {/* Mandala Icon */}
@@ -401,14 +455,26 @@ const HomePage = () => {
                 <div className="product-info">
                   <h3 className="product-name">{product.name}</h3>
                   <div className="product-price-row">
-                    {product.isOnSale && product.salePrice ? (
-                      <>
-                        <span className="sale-price">₹{product.salePrice.toFixed(2)}</span>
-                        <span className="original-price">₹{product.price.toFixed(2)}</span>
-                      </>
-                    ) : (
-                      <span className="sale-price">₹{product.price.toFixed(2)}</span>
-                    )}
+                    {(() => {
+                      const festivalDiscounted = activeFestival ? getFestivalPrice(product.price, activeFestival) : null;
+                      if (festivalDiscounted !== null && festivalDiscounted < product.price) {
+                        return (
+                          <>
+                            <span className="sale-price">₹{festivalDiscounted.toFixed(2)}</span>
+                            <span className="original-price">₹{product.price.toFixed(2)}</span>
+                          </>
+                        );
+                      } else if (product.isOnSale && product.salePrice) {
+                        return (
+                          <>
+                            <span className="sale-price">₹{product.salePrice.toFixed(2)}</span>
+                            <span className="original-price">₹{product.price.toFixed(2)}</span>
+                          </>
+                        );
+                      } else {
+                        return <span className="sale-price">₹{product.price.toFixed(2)}</span>;
+                      }
+                    })()}
                   </div>
                   <div className="product-card-ratings">
                     <div className="stars">
