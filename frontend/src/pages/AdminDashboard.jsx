@@ -72,6 +72,7 @@ const AdminDashboard = () => {
     price: '',
     stock: '',
     color: '',
+    isPopular: false,
     images: []
   });
 
@@ -162,8 +163,8 @@ const AdminDashboard = () => {
 
 
   const handleProductInputChange = (e) => {
-    const { name, value } = e.target;
-    setNewProductForm(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setNewProductForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
   const handleProductFileChange = (e) => {
@@ -193,6 +194,7 @@ const AdminDashboard = () => {
       formData.append('price', newProductForm.price);
       formData.append('stock', newProductForm.stock);
       formData.append('color', newProductForm.color);
+      formData.append('isPopular', newProductForm.isPopular);
       
       // Append each file with the key 'images'
       newProductForm.images.forEach(file => {
@@ -219,7 +221,7 @@ const AdminDashboard = () => {
         setIsAddProductModalOpen(false);
         setIsEditMode(false);
         setEditingProductId(null);
-        setNewProductForm({ name: '', description: '', category: '', price: '', stock: '', color: '', images: [] });
+        setNewProductForm({ name: '', description: '', category: '', price: '', stock: '', color: '', isPopular: false, images: [] });
       } else {
         let errMsg = isEditMode ? 'Failed to update product' : 'Failed to add product';
         try {
@@ -248,6 +250,7 @@ const AdminDashboard = () => {
       price: product.price || '',
       stock: product.stock || '',
       color: product.color || '',
+      isPopular: product.isPopular || false,
       images: [] 
     });
     setIsAddProductModalOpen(true);
@@ -939,6 +942,11 @@ const AdminDashboard = () => {
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Color</label>
                   <input type="text" name="color" value={newProductForm.color} onChange={handleProductInputChange} style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit' }} />
                 </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem', marginBottom: '0.25rem' }}>
+                <input type="checkbox" name="isPopular" id="isPopular" checked={newProductForm.isPopular} onChange={handleProductInputChange} style={{ width: '1rem', height: '1rem', cursor: 'pointer' }} />
+                <label htmlFor="isPopular" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#475569', cursor: 'pointer' }}>Mark as Popular Pick</label>
               </div>
 
               <div>

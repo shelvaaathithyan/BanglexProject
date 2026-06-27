@@ -52,7 +52,7 @@ const HomePage = () => {
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {
-            setPopularProducts(data.slice(0, 20));
+            setPopularProducts(data.filter(p => p.isPopular).slice(0, 20));
           }
         }
       } catch (err) {
