@@ -11,7 +11,6 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from 'recharts';
-import { mockProducts } from '../utils/mockProducts';
 import API_BASE from '../config/api';
 
 const mockCategories = [
@@ -57,7 +56,7 @@ const AdminDashboard = () => {
   const [paymentOverview, setPaymentOverview] = useState([]);
 
   // Products Table State
-  const [allProducts, setAllProducts] = useState(mockProducts);
+  const [allProducts, setAllProducts] = useState([]);
   const [productSearchQuery, setProductSearchQuery] = useState('');
   const [productFilterCategory, setProductFilterCategory] = useState('All Categories');
 
@@ -71,7 +70,7 @@ const AdminDashboard = () => {
     price: '',
     stock: '',
     color: '',
-    image: null
+    images: []
   });
 
   const handleProductInputChange = (e) => {
@@ -80,15 +79,20 @@ const AdminDashboard = () => {
   };
 
   const handleProductFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setNewProductForm(prev => ({ ...prev, image: e.target.files[0] }));
+    if (e.target.files && e.target.files.length > 0) {
+      setNewProductForm(prev => ({ ...prev, images: Array.from(e.target.files) }));
     }
   };
 
   const handleAddProductSubmit = async (e) => {
     e.preventDefault();
-    if (!newProductForm.name || !newProductForm.category || !newProductForm.price || !newProductForm.image) {
-      alert("Name, Category, Price, and Image are required.");
+    if (!newProductForm.name || !newProductForm.category || !newProductForm.price || newProductForm.images.length === 0) {
+      alert("Name, Category, Price, and at least one Image are required.");
+      return;
+    }
+    
+    if (newProductForm.images.length > 20) {
+      alert("You can upload a maximum of 20 images per product.");
       return;
     }
     
@@ -101,7 +105,11 @@ const AdminDashboard = () => {
       formData.append('price', newProductForm.price);
       formData.append('stock', newProductForm.stock);
       formData.append('color', newProductForm.color);
-      formData.append('image', newProductForm.image);
+      
+      // Append each file with the key 'images'
+      newProductForm.images.forEach(file => {
+        formData.append('images', file);
+      });
 
       const res = await fetch(`${API_BASE}/products`, {
         method: 'POST',
@@ -112,10 +120,16 @@ const AdminDashboard = () => {
         const savedProduct = await res.json();
         setAllProducts(prev => [savedProduct, ...prev]);
         setIsAddProductModalOpen(false);
-        setNewProductForm({ name: '', description: '', category: '', price: '', stock: '', color: '', image: null });
+        setNewProductForm({ name: '', description: '', category: '', price: '', stock: '', color: '', images: [] });
       } else {
-        const errorData = await res.json();
-        alert(errorData.message || 'Failed to add product');
+        let errMsg = 'Failed to add product';
+        try {
+          const errorData = await res.json();
+          errMsg = errorData.message || errMsg;
+        } catch (jsonErr) {
+          errMsg = `Server error (Status: ${res.status})`;
+        }
+        alert(errMsg);
       }
     } catch (err) {
       console.error(err);
@@ -132,16 +146,7 @@ const AdminDashboard = () => {
         const res = await fetch(`${API_BASE}/products`);
         if (res.ok) {
           const data = await res.json();
-          const combined = [...data, ...mockProducts];
-          const unique = [];
-          const map = new Map();
-          for (const item of combined) {
-            if(!map.has(item._id)){
-               map.set(item._id, true);
-               unique.push(item);
-            }
-          }
-          setAllProducts(unique);
+          setAllProducts(data);
         }
       } catch (err) {
         console.error('Failed to fetch products for admin panel:', err);
@@ -739,12 +744,12 @@ const AdminDashboard = () => {
               <div style={{ display: 'flex', gap: '1rem' }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Category *</label>
-                  <input list="category-options" name="category" value={newProductForm.category} onChange={handleProductInputChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit' }} />
-                  <datalist id="category-options">
-                    {uniqueProductCategories.filter(c => c !== 'All Categories').map(cat => (
-                      <option key={cat} value={cat} />
+                  <select name="category" value={newProductForm.category} onChange={handleProductInputChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem', fontFamily: 'inherit', backgroundColor: 'white' }}>
+                    <option value="" disabled>Select a category</option>
+                    {mockCategories.map(cat => (
+                      <option key={cat.id} value={cat.name}>{cat.name}</option>
                     ))}
-                  </datalist>
+                  </select>
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Price (₹) *</label>
@@ -764,8 +769,22 @@ const AdminDashboard = () => {
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Product Image *</label>
-                <input type="file" accept="image/*" onChange={handleProductFileChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px dashed #cbd5e1', fontSize: '0.875rem', cursor: 'pointer' }} />
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Product Images * (Select multiple, order is preserved)</label>
+                <input type="file" multiple accept="image/*" onChange={handleProductFileChange} required style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px dashed #cbd5e1', fontSize: '0.875rem', cursor: 'pointer' }} />
+                
+                {/* Image Preview / Order Verification */}
+                {newProductForm.images.length > 0 && (
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem', overflowX: 'auto', paddingBottom: '0.5rem' }}>
+                    {newProductForm.images.map((file, index) => (
+                      <div key={index} style={{ position: 'relative', width: '60px', height: '60px', flexShrink: 0, borderRadius: '6px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                        <img src={URL.createObjectURL(file)} alt={`Preview ${index + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <div style={{ position: 'absolute', top: 0, left: 0, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: '10px', padding: '2px 4px', borderBottomRightRadius: '4px' }}>
+                          {index + 1}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '1rem' }}>

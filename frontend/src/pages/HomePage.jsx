@@ -1,15 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
-import { ShoppingBag, Gift, Star } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ShoppingBag, Gift, Star, Heart, Diamond, Gift as GiftIcon, ArrowRight, ShieldCheck } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { mockProducts } from '../utils/mockProducts';
-import { Heart, Diamond, Gift as GiftIcon, ArrowRight, ShieldCheck } from 'lucide-react';
 import gsap from 'gsap';
 import API_BASE from '../config/api';
 
 const HomePage = () => {
-  const [popularProducts, setPopularProducts] = useState(mockProducts);
+  const [popularProducts, setPopularProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState({});
 
@@ -54,21 +52,11 @@ const HomePage = () => {
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {
-            // We want around 20 products. If we get them, use them. If less than 20, fill with mock products.
-            let productsToShow = [...data];
-            if (productsToShow.length < 20) {
-              const extraNeeded = 20 - productsToShow.length;
-              productsToShow = [...productsToShow, ...mockProducts.slice(0, extraNeeded)];
-            } else {
-              productsToShow = productsToShow.slice(0, 20);
-            }
-            setPopularProducts(productsToShow);
+            setPopularProducts(data.slice(0, 20));
           }
         }
       } catch (err) {
         console.error('Error fetching popular products:', err);
-        // Fall back to mockProducts on error
-        setPopularProducts(mockProducts);
       } finally {
         setLoading(false);
       }

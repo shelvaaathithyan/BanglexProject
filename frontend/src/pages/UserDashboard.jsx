@@ -326,7 +326,7 @@ const UserDashboard = () => {
                       <button className="btn-shop-now" onClick={() => navigate('/')}>Discover Styles</button>
                     </div>
                   ) : (
-                    <div className="popular-products-grid" style={{ marginTop: '1rem' }}>
+                    <div className="saved-looks-grid" style={{ marginTop: '1rem' }}>
                       {savedLooks.map((product) => (
                         <div key={product._id} className="product-card">
                           <Link to={`/product/${product._id}`} className="product-image-wrapper">
@@ -347,7 +347,7 @@ const UserDashboard = () => {
                               <span className="sale-price">₹{product.salePrice ? product.salePrice.toFixed(2) : product.price.toFixed(2)}</span>
                             </div>
                             <button 
-                              className="btn-primary" 
+                              className="btn btn-primary" 
                               onClick={() => navigate(`/product/${product._id}`)}
                               style={{ width: '100%', padding: '0.5rem', marginTop: '0.5rem' }}
                             >

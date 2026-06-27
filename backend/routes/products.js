@@ -36,7 +36,21 @@ router.get('/', async (req, res) => {
 
 // @route   POST /products
 // @desc    Add a new product with image upload
-router.post('/', upload.single('image'), async (req, res) => {
+const uploadMultiple = upload.array('images', 20);
+
+router.post('/', (req, res, next) => {
+  uploadMultiple(req, res, function (err) {
+    if (err instanceof multer.MulterError) {
+      if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+        return res.status(400).json({ message: 'Too many files selected. Max limit is 20 images.' });
+      }
+      return res.status(400).json({ message: err.message });
+    } else if (err) {
+      return res.status(500).json({ message: 'An error occurred during file upload.' });
+    }
+    next();
+  });
+}, async (req, res) => {
   try {
     const { name, description, category, price, stock, color } = req.body;
     
@@ -54,8 +68,8 @@ router.post('/', upload.single('image'), async (req, res) => {
       images: []
     };
 
-    if (req.file && req.file.path) {
-      newProductData.images.push(req.file.path);
+    if (req.files && req.files.length > 0) {
+      newProductData.images = req.files.map(file => file.path);
     }
 
     const newProduct = new Product(newProductData);

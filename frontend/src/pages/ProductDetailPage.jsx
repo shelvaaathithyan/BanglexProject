@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Share2, Plus, Minus, Star, Truck, Heart, ShoppingCart, Zap } from 'lucide-react';
+import { Share2, Plus, Minus, Star, Truck, Heart, ShoppingCart, Zap, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import { mockProducts } from '../utils/mockProducts';
 import API_BASE from '../config/api';
 
 const ProductDetailPage = () => {
@@ -16,6 +15,8 @@ const ProductDetailPage = () => {
   const [selectedSize, setSelectedSize] = useState('2.4');
   const [selectedColor, setSelectedColor] = useState('maroon');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [showAllImagesGallery, setShowAllImagesGallery] = useState(false);
+  const [isClosingGallery, setIsClosingGallery] = useState(false);
   const [quantity, setQuantity] = useState(1);
   
   const [loading, setLoading] = useState(true);
@@ -49,19 +50,6 @@ const ProductDetailPage = () => {
       setLoading(true);
       setError(null);
       try {
-        if (productId && productId.startsWith('mock-')) {
-          const productData = mockProducts.find(item => item._id === productId);
-          if (!productData) throw new Error('Product not found');
-          setProduct(productData);
-          
-          const filtered = mockProducts
-            .filter(item => item.category === productData.category && item._id !== productId)
-            .slice(0, 4);
-          setRelatedProducts(filtered);
-          setLoading(false);
-          return;
-        }
-
         const res = await fetch(`${API_BASE}/products/${productId}`);
         if (!res.ok) throw new Error('Product not found');
         const productData = await res.json();
@@ -149,6 +137,17 @@ const ProductDetailPage = () => {
     handleAddToCart();
   };
 
+  const handleCloseGallery = (idx = null) => {
+    setIsClosingGallery(true);
+    if (idx !== null) {
+      setSelectedImageIndex(idx);
+    }
+    setTimeout(() => {
+      setShowAllImagesGallery(false);
+      setIsClosingGallery(false);
+    }, 200);
+  };
+
   if (loading) {
     return (
       <div className="product-detail-page">
@@ -172,13 +171,10 @@ const ProductDetailPage = () => {
     );
   }
 
-  // Generate a mock array of images if product only has 1, just for the gallery demo
-  const displayImages = product.images.length > 1 ? product.images : [
-    product.images[0] || 'https://via.placeholder.com/600',
-    'https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1596944924616-7b38e7cfac36?auto=format&fit=crop&w=600&q=80',
-    'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=600&q=80'
-  ];
+  // Only show the images the product actually has
+  const displayImages = product.images && product.images.length > 0 
+    ? product.images 
+    : ['https://via.placeholder.com/600'];
 
   return (
     <div className="product-detail-page">
@@ -196,122 +192,155 @@ const ProductDetailPage = () => {
           <span className="breadcrumb-current">{product.name}</span>
         </div>
 
-        <div className="product-detail-layout">
-          {/* Left: Image Gallery */}
-          <div className="product-gallery">
-            <div className="thumbnail-list">
+         <div className="product-detail-layout">
+           {/* Left: Image Gallery & Actions */}
+           <div className="gallery-and-actions-column" style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+             <div className="product-gallery">
+               <div className="thumbnail-list">
+                {displayImages.slice(0, 5).map((img, idx) => {
+                  const isLastAndMore = idx === 4 && displayImages.length > 5;
+                  return (
+                    <button 
+                      key={idx} 
+                      className={`thumbnail-btn ${selectedImageIndex === idx ? 'active' : ''} ${isLastAndMore ? 'view-all-thumbnail' : ''}`}
+                      onClick={() => isLastAndMore ? setShowAllImagesGallery(true) : setSelectedImageIndex(idx)}
+                    >
+                      <img src={img} alt={`Thumbnail ${idx}`} />
+                      {isLastAndMore && (
+                        <div className="view-all-overlay">
+                          <span>+{displayImages.length - 4}</span>
+                          <span className="view-all-label">View All</span>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+               <div className="main-image-container">
+                 <img src={displayImages[selectedImageIndex]} alt={product.name} className="main-image" />
+               </div>
+             </div>
+
+             {/* Actions moved under the image gallery */}
+             <div className="bottom-actions gallery-actions">
+               <div className="action-buttons-row">
+                 <button className="btn-add-cart" onClick={handleAddToCart}>
+                   <ShoppingCart size={18} /> Add to Cart
+                 </button>
+                 <button className="btn-shop-now" onClick={handleBuyNow}>
+                   <Zap size={18} fill="white" /> Shop Now
+                 </button>
+               </div>
+               
+               <button className="save-item-btn" onClick={toggleSave} style={{ marginTop: '1rem' }}>
+                 <Heart size={18} fill={isSaved ? "#e91e63" : "none"} color={isSaved ? "#e91e63" : "currentColor"} />
+                 <span>{isSaved ? "Saved in looks" : "Save Item"}</span>
+               </button>
+             </div>
+           </div>
+ 
+           {/* Right: Product Details */}
+           <div className="product-info-panel">
+             <h1 className="product-title">{product.name}</h1>
+             
+             <div className="product-price">
+               {product.isOnSale && product.salePrice ? (
+                 <>
+                   <span className="price-sale">₹{product.salePrice.toFixed(2)}</span>
+                   <span className="price-original">₹{product.price.toFixed(2)}</span>
+                 </>
+               ) : (
+                 <span className="price-sale">₹{product.price.toFixed(2)}</span>
+               )}
+             </div>
+ 
+             <div className="product-ratings">
+               <div className="stars">
+                 {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#f59e0b" color="#f59e0b" />)}
+               </div>
+               <span className="rating-score">4.9</span>
+               <span className="review-count">(128 Reviews)</span>
+             </div>
+ 
+             <p className="product-description">
+               {product.description || 'Hand-painted traditional terracotta bangles with floral clay motifs. Light weight and perfect for everyday grace.'}
+             </p>
+ 
+             {/* Size Selector */}
+             <div className="selector-section">
+               <span className="selector-label"><strong>Size</strong> (Select your size)</span>
+               <div className="size-options">
+                 {sizes.map((size) => (
+                   <button 
+                     key={size}
+                     disabled={disabledSizes.includes(size)}
+                     className={`size-btn ${selectedSize === size ? 'active' : ''} ${disabledSizes.includes(size) ? 'disabled' : ''}`}
+                     onClick={() => setSelectedSize(size)}
+                   >
+                     {size}
+                   </button>
+                 ))}
+               </div>
+             </div>
+ 
+             {/* Color Selector */}
+             <div className="selector-section">
+               <span className="selector-label"><strong>Color</strong></span>
+               <div className="color-options">
+                 {mockColors.map((color) => (
+                   <button
+                     key={color.id}
+                     className={`color-btn ${selectedColor === color.id ? 'active' : ''}`}
+                     style={{ backgroundColor: color.hex }}
+                     onClick={() => setSelectedColor(color.id)}
+                     aria-label={`Select color ${color.id}`}
+                   />
+                 ))}
+               </div>
+             </div>
+ 
+             {/* Quantity */}
+             <div className="selector-section">
+               <span className="selector-label"><strong>Quantity</strong></span>
+               <div className="quantity-control">
+                 <button onClick={decrementQty}><Minus size={16} /></button>
+                 <span>{quantity}</span>
+                 <button onClick={incrementQty}><Plus size={16} /></button>
+               </div>
+             </div>
+ 
+             <div className="delivery-info">
+               <Truck size={18} />
+               <span>Estimated Delivery: 2 - 4 Days</span>
+             </div>
+           </div>
+         </div>
+
+      </main>
+      
+      {/* Full Gallery Modal */}
+      {showAllImagesGallery && (
+        <div className={`image-gallery-modal ${isClosingGallery ? 'closing' : ''}`} onClick={() => handleCloseGallery()}>
+          <div className="image-gallery-content" onClick={e => e.stopPropagation()}>
+            <button className="close-gallery-btn" onClick={() => handleCloseGallery()}>
+              <X size={18} />
+            </button>
+            <h2>All Product Images</h2>
+            <div className="full-gallery-grid">
               {displayImages.map((img, idx) => (
-                <button 
+                <div 
                   key={idx} 
-                  className={`thumbnail-btn ${selectedImageIndex === idx ? 'active' : ''}`}
-                  onClick={() => setSelectedImageIndex(idx)}
+                  className={`gallery-grid-item ${selectedImageIndex === idx ? 'active' : ''}`}
+                  onClick={() => handleCloseGallery(idx)}
                 >
-                  <img src={img} alt={`Thumbnail ${idx}`} />
-                </button>
+                  <img src={img} alt={`Gallery ${idx}`} />
+                </div>
               ))}
-            </div>
-            <div className="main-image-container">
-              <img src={displayImages[selectedImageIndex]} alt={product.name} className="main-image" />
-            </div>
-          </div>
-
-          {/* Right: Product Details */}
-          <div className="product-info-panel">
-            <h1 className="product-title">{product.name}</h1>
-            
-            <div className="product-price">
-              {product.isOnSale && product.salePrice ? (
-                <>
-                  <span className="price-sale">₹{product.salePrice.toFixed(2)}</span>
-                  <span className="price-original">₹{product.price.toFixed(2)}</span>
-                </>
-              ) : (
-                <span className="price-sale">₹{product.price.toFixed(2)}</span>
-              )}
-            </div>
-
-            <div className="product-ratings">
-              <div className="stars">
-                {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#f59e0b" color="#f59e0b" />)}
-              </div>
-              <span className="rating-score">4.9</span>
-              <span className="review-count">(128 Reviews)</span>
-            </div>
-
-            <p className="product-description">
-              {product.description || 'Hand-painted traditional terracotta bangles with floral clay motifs. Light weight and perfect for everyday grace.'}
-            </p>
-
-            {/* Size Selector */}
-            <div className="selector-section">
-              <span className="selector-label"><strong>Size</strong> (Select your size)</span>
-              <div className="size-options">
-                {sizes.map((size) => (
-                  <button 
-                    key={size}
-                    disabled={disabledSizes.includes(size)}
-                    className={`size-btn ${selectedSize === size ? 'active' : ''} ${disabledSizes.includes(size) ? 'disabled' : ''}`}
-                    onClick={() => setSelectedSize(size)}
-                  >
-                    {size}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Color Selector */}
-            <div className="selector-section">
-              <span className="selector-label"><strong>Color</strong></span>
-              <div className="color-options">
-                {mockColors.map((color) => (
-                  <button
-                    key={color.id}
-                    className={`color-btn ${selectedColor === color.id ? 'active' : ''}`}
-                    style={{ backgroundColor: color.hex }}
-                    onClick={() => setSelectedColor(color.id)}
-                    aria-label={`Select color ${color.id}`}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Quantity */}
-            <div className="selector-section">
-              <span className="selector-label"><strong>Quantity</strong></span>
-              <div className="quantity-control">
-                <button onClick={decrementQty}><Minus size={16} /></button>
-                <span>{quantity}</span>
-                <button onClick={incrementQty}><Plus size={16} /></button>
-              </div>
-            </div>
-
-            <div className="delivery-info">
-              <Truck size={18} />
-              <span>Estimated Delivery: 2 - 4 Days</span>
-            </div>
-
-            <hr className="divider-line" />
-
-            {/* Actions */}
-            <div className="bottom-actions">
-              <button className="save-item-btn" onClick={toggleSave}>
-                <Heart size={18} fill={isSaved ? "#e91e63" : "none"} color={isSaved ? "#e91e63" : "currentColor"} />
-                <span>{isSaved ? "Saved" : "Save Item"}</span>
-              </button>
-              
-              <div className="action-buttons-row">
-                <button className="btn-add-cart" onClick={handleAddToCart}>
-                  <ShoppingCart size={18} /> Add to Cart
-                </button>
-                <button className="btn-shop-now" onClick={handleBuyNow}>
-                  <Zap size={18} fill="white" /> Shop Now
-                </button>
-              </div>
             </div>
           </div>
         </div>
+      )}
 
-      </main>
       <Footer />
     </div>
   );
