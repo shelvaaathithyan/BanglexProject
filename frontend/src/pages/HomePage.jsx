@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import gsap from 'gsap';
 import API_BASE from '../config/api';
 import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
+import SizeFinder from './SizeFinder';
 
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState([]);
@@ -469,6 +470,11 @@ const HomePage = () => {
             ))}
           </div>
         )}
+      </section>
+
+      {/* AI Size Finder Section */}
+      <section id="size-finder">
+        <SizeFinder />
       </section>
 
       <Footer />

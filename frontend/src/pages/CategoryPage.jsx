@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { Star, Heart } from 'lucide-react';
@@ -25,6 +25,8 @@ const categorySlugMapping = {
 
 const CategoryPage = () => {
   const { categorySlug } = useParams();
+  const [searchParams] = useSearchParams();
+  const sizeFilter = searchParams.get('size');
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -109,6 +111,7 @@ const CategoryPage = () => {
 
   // Apply filter
   const filteredProducts = products.filter(p => {
+    if (sizeFilter && (!p.sizes || !p.sizes.includes(sizeFilter))) return false;
     if (!filter) return true;
     const [min, max] = filter.split('-').map(Number);
     return p.price >= min && p.price <= max;
@@ -261,18 +264,26 @@ const CategoryPage = () => {
           <div className="catalog-loading"><div className="spinner" />Loading products...</div>
         ) : error ? (
           <div className="catalog-error">Error: {error}</div>
-        ) : sortedProducts.length === 0 ? (
-          <div className="catalog-empty">No products found.</div>
         ) : (
-          <div className="product-grid">
-            {sortedProducts.map(product => (
-              <Link key={product._id} to={`/product/${product._id}`} className="product-card">
-                <div className="product-image-wrapper">
-                  <img src={product.images[0] || 'https://via.placeholder.com/300'} alt={product.name} className="product-image" />
-                  {/* Heart icon */}
-                  <button className="btn-wishlist" onClick={(e) => toggleLike(e, product)}>
-                    <Heart size={18} fill={liked[product._id] ? "#e11d48" : "none"} color={liked[product._id] ? "#e11d48" : "#4b5563"} />
-                  </button>
+          <>
+            {sizeFilter && (
+              <div style={{ backgroundColor: '#fffbeb', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center', border: '1px solid #fcd34d', color: '#92400e', fontWeight: 500 }}>
+                ✨ Showing products available in Size {sizeFilter}
+              </div>
+            )}
+            
+            {sortedProducts.length === 0 ? (
+              <div className="catalog-empty">No products found.</div>
+            ) : (
+              <div className="product-grid">
+                {sortedProducts.map(product => (
+                  <Link key={product._id} to={`/product/${product._id}`} className="product-card">
+                    <div className="product-image-wrapper">
+                      <img src={product.images[0] || 'https://via.placeholder.com/300'} alt={product.name} className="product-image" />
+                      {/* Heart icon */}
+                      <button className="btn-wishlist" onClick={(e) => toggleLike(e, product)}>
+                        <Heart size={18} fill={liked[product._id] ? "#e11d48" : "none"} color={liked[product._id] ? "#e11d48" : "#4b5563"} />
+                      </button>
                   {product.isOnSale && <span className="product-sale-badge">Sale</span>}
                   {product.color && <span className="product-color-badge">{product.color}</span>}
                 </div>
@@ -314,6 +325,8 @@ const CategoryPage = () => {
               </Link>
             ))}
           </div>
+        )}
+        </>
         )}
       </main>
       <Footer />
