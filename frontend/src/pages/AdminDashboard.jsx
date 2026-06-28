@@ -163,6 +163,7 @@ const AdminDashboard = () => {
     price: '',
     stock: '',
     color: '',
+    sizes: [],
     isPopular: false,
     images: []
   });
@@ -439,6 +440,17 @@ const AdminDashboard = () => {
     setNewProductForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
   };
 
+  const handleSizeChange = (size) => {
+    setNewProductForm(prev => {
+      const sizes = prev.sizes || [];
+      if (sizes.includes(size)) {
+        return { ...prev, sizes: sizes.filter(s => s !== size) };
+      } else {
+        return { ...prev, sizes: [...sizes, size] };
+      }
+    });
+  };
+
   const handleProductFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       setNewProductForm(prev => ({ ...prev, images: Array.from(e.target.files) }));
@@ -467,6 +479,7 @@ const AdminDashboard = () => {
       formData.append('stock', newProductForm.stock);
       formData.append('color', newProductForm.color);
       formData.append('isPopular', newProductForm.isPopular);
+      formData.append('sizes', JSON.stringify(newProductForm.sizes || []));
       
       // Append each file with the key 'images'
       newProductForm.images.forEach(file => {
@@ -522,6 +535,7 @@ const AdminDashboard = () => {
       price: product.price || '',
       stock: product.stock || '',
       color: product.color || '',
+      sizes: product.sizes || [],
       isPopular: product.isPopular || false,
       images: [] 
     });
@@ -1642,7 +1656,33 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem', marginBottom: '0.25rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Sizes</label>
+                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                    {['2.2', '2.4', '2.6', '2.8'].map(size => (
+                      <button
+                        type="button"
+                        key={size}
+                        onClick={() => handleSizeChange(size)}
+                        style={{
+                          padding: '0.5rem 0.75rem',
+                          borderRadius: '6px',
+                          border: `1px solid ${newProductForm.sizes?.includes(size) ? '#e11d48' : '#cbd5e1'}`,
+                          background: newProductForm.sizes?.includes(size) ? '#fff1f2' : 'white',
+                          color: newProductForm.sizes?.includes(size) ? '#e11d48' : '#475569',
+                          fontWeight: 500,
+                          cursor: 'pointer'
+                        }}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '1rem', marginBottom: '0.25rem' }}>
                 <input type="checkbox" name="isPopular" id="isPopular" checked={newProductForm.isPopular} onChange={handleProductInputChange} style={{ width: '1rem', height: '1rem', cursor: 'pointer' }} />
                 <label htmlFor="isPopular" style={{ fontSize: '0.875rem', fontWeight: 500, color: '#475569', cursor: 'pointer' }}>Mark as Popular Pick</label>
               </div>

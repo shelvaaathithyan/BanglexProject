@@ -56,6 +56,16 @@ const ProductDetailPage = () => {
     }
   }, [productId]);
 
+  useEffect(() => {
+    if (product?.sizes && product.sizes.length > 0) {
+      if (!product.sizes.includes(selectedSize)) {
+        setSelectedSize(product.sizes[0]);
+      }
+    } else {
+      setSelectedSize(''); // Clear size if product has no sizes
+    }
+  }, [product, selectedSize]);
+
   // Mock Data
   const mockColors = [
     { id: 'maroon', hex: '#6b112c' },
@@ -63,7 +73,7 @@ const ProductDetailPage = () => {
     { id: 'yellow', hex: '#b45309' }
   ];
   const sizes = ['2.2', '2.4', '2.6', '2.8'];
-  const disabledSizes = ['2.8'];
+  const disabledSizes = product?.sizes?.length > 0 ? sizes.filter(s => !product.sizes.includes(s)) : sizes;
 
   useEffect(() => {
     const fetchProductAndRelated = async () => {

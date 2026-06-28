@@ -52,7 +52,7 @@ router.post('/', (req, res, next) => {
   });
 }, async (req, res) => {
   try {
-    const { name, description, category, price, stock, color, isPopular } = req.body;
+    const { name, description, category, price, stock, color, isPopular, sizes } = req.body;
     
     if (!name || !category || !price) {
       return res.status(400).json({ message: 'Name, category, and price are required' });
@@ -65,6 +65,7 @@ router.post('/', (req, res, next) => {
       price: Number(price),
       stock: stock ? Number(stock) : 10,
       color,
+      sizes: sizes ? JSON.parse(sizes) : [],
       isPopular: isPopular === 'true',
       images: []
     };
@@ -129,7 +130,7 @@ router.put('/:id', (req, res, next) => {
   });
 }, async (req, res) => {
   try {
-    const { name, description, category, price, stock, color, isPopular } = req.body;
+    const { name, description, category, price, stock, color, isPopular, sizes } = req.body;
     
     let product = await Product.findById(req.params.id);
     if (!product) {
@@ -143,6 +144,7 @@ router.put('/:id', (req, res, next) => {
     if (stock !== undefined) product.stock = Number(stock);
     if (color !== undefined) product.color = color;
     if (isPopular !== undefined) product.isPopular = isPopular === 'true';
+    if (sizes !== undefined) product.sizes = JSON.parse(sizes);
 
     if (req.files && req.files.length > 0) {
       product.images = req.files.map(file => file.path);

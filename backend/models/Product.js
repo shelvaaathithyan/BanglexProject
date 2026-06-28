@@ -33,6 +33,10 @@ const ProductSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  sizes: [{
+    type: String,
+    enum: ['2.2', '2.4', '2.6', '2.8']
+  }],
   stock: {
     type: Number,
     default: 10
