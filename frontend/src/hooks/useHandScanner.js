@@ -1,18 +1,23 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { analyzeHandQuality, HAND_LANDMARKS, calculateDistance2D } from '../utils/landmarkUtils';
-import { estimatePhysicalSize } from '../utils/calibrationUtils';
+import { extractMeasurements } from '../utils/handScannerPipeline/measurementExtraction';
+import { smoothLandmarks } from '../utils/handScannerPipeline/smoothing';
+import { validateLandmarkVisibility } from '../utils/handScannerPipeline/landmarkValidation';
+import { validateFoldedPose } from '../utils/handScannerPipeline/poseValidation';
+import { analyzeMeasurements } from '../utils/handScannerPipeline/statisticalAnalysis';
+import { checkLighting, calculateConfidence } from '../utils/handScannerPipeline/confidence';
+import { estimatePhysicalSize, calibrateWithCard } from '../utils/calibrationUtils';
 import { calculateBangleSize } from '../utils/bangleSizeCalculator';
 
 const Hands = window.Hands;
 const Camera = window.Camera;
 
 export const SCAN_PHASES = {
+  SELECT_MODE: 'SELECT_MODE',
+  CALIBRATING: 'CALIBRATING',
   INITIALIZING: 'INITIALIZING',
   SEARCHING: 'SEARCHING',
-  FOUND: 'FOUND',
   CHECKING_POSITION: 'CHECKING_POSITION',
-  STABILIZING: 'STABILIZING',
-  MEASURING: 'MEASURING',
+  COLLECTING: 'COLLECTING',
   CALCULATING: 'CALCULATING',
   COMPLETE: 'COMPLETE',
   ERROR: 'ERROR'
@@ -21,18 +26,31 @@ export const SCAN_PHASES = {
 export const useHandScanner = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
-  const [phase, setPhase] = useState(SCAN_PHASES.INITIALIZING);
-  const [qualityScore, setQualityScore] = useState(0);
-  const [countdown, setCountdown] = useState(null);
-  const [result, setResult] = useState(null);
-  const [errorMsg, setErrorMsg] = useState('');
   
+  // High-level state
+  const [phase, setPhase] = useState(SCAN_PHASES.SELECT_MODE);
+  const [scanMode, setScanMode] = useState(null); // 'QUICK' or 'HIGH_ACCURACY'
+  const [calibrationScale, setCalibrationScale] = useState(null); // mm per pixel
+  
+  // Live feedback state
+  const [confidence, setConfidence] = useState({ overall: 0, pose: 0, lighting: 0, stability: 0, visibility: 0 });
+  const [errorMsg, setErrorMsg] = useState('');
+  const [progress, setProgress] = useState(0); // 0 to 100 based on frame buffer size
+  
+  // Result state
+  const [result, setResult] = useState(null);
+  
+  // Refs for tracking
   const handsRef = useRef(null);
   const cameraRef = useRef(null);
   const isDestroyed = useRef(false);
-  const measurementsRef = useRef([]);
+  const measurementBufferRef = useRef([]);
+  const previousLandmarksRef = useRef(null);
+  const frameCountRef = useRef(0);
+  
+  // Stability tracking
+  const [stabilityScore, setStabilityScore] = useState(0);
 
-  // Cleanup function to strictly garbage collect all media/AI resources
   const destroyResources = useCallback(() => {
     isDestroyed.current = true;
     
@@ -58,38 +76,56 @@ export const useHandScanner = () => {
 
     if (canvasRef.current) {
       const ctx = canvasRef.current.getContext('2d');
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
   }, [videoRef, canvasRef]);
 
   const reset = useCallback(() => {
-    setPhase(SCAN_PHASES.INITIALIZING);
-    setQualityScore(0);
-    setCountdown(null);
+    setPhase(SCAN_PHASES.SELECT_MODE);
+    setScanMode(null);
+    setCalibrationScale(null);
+    setConfidence({ overall: 0, pose: 0, lighting: 0, stability: 0, visibility: 0 });
     setResult(null);
     setErrorMsg('');
+    setProgress(0);
+    measurementBufferRef.current = [];
+    previousLandmarksRef.current = null;
+    frameCountRef.current = 0;
   }, []);
 
   useEffect(() => {
-    return () => {
-      destroyResources(); // Cleanup on unmount
-    };
+    return () => destroyResources();
   }, [destroyResources]);
+
+  const selectMode = (mode) => {
+    setScanMode(mode);
+    if (mode === 'HIGH_ACCURACY') {
+      setPhase(SCAN_PHASES.CALIBRATING);
+    } else {
+      startScanner();
+    }
+  };
+
+  const completeCalibration = (scale) => {
+    if (scale) setCalibrationScale(scale);
+    startScanner();
+  };
 
   const startScanner = useCallback(async () => {
     isDestroyed.current = false;
     setPhase(SCAN_PHASES.INITIALIZING);
     setErrorMsg('');
-    measurementsRef.current = [];
+    measurementBufferRef.current = [];
+    previousLandmarksRef.current = null;
+    frameCountRef.current = 0;
     
     try {
-      // 1. Initialize MediaPipe Hands
       handsRef.current = new Hands({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
       });
       
       handsRef.current.setOptions({
-        maxNumHands: 2, // We allow 2 to detect and reject multiple hands
+        maxNumHands: 2,
         modelComplexity: 1,
         minDetectionConfidence: 0.7,
         minTrackingConfidence: 0.7
@@ -97,7 +133,6 @@ export const useHandScanner = () => {
 
       handsRef.current.onResults(onResults);
 
-      // 2. Initialize Camera
       if (!videoRef.current) throw new Error("Video element not found");
 
       cameraRef.current = new Camera(videoRef.current, {
@@ -120,169 +155,203 @@ export const useHandScanner = () => {
       setPhase(SCAN_PHASES.ERROR);
       destroyResources();
     }
-  }, [videoRef, canvasRef]);
+  }, [videoRef, canvasRef, destroyResources]);
 
   const onResults = useCallback((results) => {
     if (isDestroyed.current || phase === SCAN_PHASES.COMPLETE) return;
 
+    frameCountRef.current += 1;
     const ctx = canvasRef.current?.getContext('2d');
     if (!ctx || !canvasRef.current || !videoRef.current) return;
 
-    // Set canvas dimensions to match video
     canvasRef.current.width = videoRef.current.videoWidth;
     canvasRef.current.height = videoRef.current.videoHeight;
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
 
     if (!results.multiHandLandmarks || results.multiHandLandmarks.length === 0) {
       setPhase(SCAN_PHASES.SEARCHING);
-      setQualityScore(0);
-      setCountdown(null);
+      setErrorMsg("Place Your Hand Here");
       return;
     }
 
     if (results.multiHandLandmarks.length > 1) {
-      setPhase(SCAN_PHASES.ERROR);
+      setPhase(SCAN_PHASES.CHECKING_POSITION);
       setErrorMsg("Please show only one hand.");
-      setQualityScore(0);
-      setCountdown(null);
       return;
     }
 
-    const landmarks = results.multiHandLandmarks[0];
-    const handedness = results.multiHandedness[0];
-
-    // Optional: Could enforce palm facing based on handedness and x-coordinates, 
-    // but MediaPipe usually tracks palm robustly enough for this MVP.
+    let landmarks = results.multiHandLandmarks[0];
     
-    // Draw elegant custom landmarks
+    // 1. Landmark Smoothing
+    landmarks = smoothLandmarks(landmarks, previousLandmarksRef.current);
+    previousLandmarksRef.current = landmarks;
+
+    // Optional: Draw landmarks
     drawElegantLandmarks(ctx, landmarks, canvasRef.current.width, canvasRef.current.height);
 
-    // Analyze Quality
-    const quality = analyzeHandQuality(landmarks);
-    setQualityScore(quality.score);
-
-    if (!quality.isGood) {
+    // 2. Validation
+    const vis = validateLandmarkVisibility(landmarks);
+    if (!vis.isValid) {
       setPhase(SCAN_PHASES.CHECKING_POSITION);
-      setErrorMsg(quality.reason);
-      setCountdown(null);
+      setErrorMsg("Keep entire hand visible (wrist, thumb, pinky).");
       return;
     }
 
-    // Hand is good, start stabilizing / countdown
-    setPhase(prev => {
-      if (prev === SCAN_PHASES.SEARCHING || prev === SCAN_PHASES.CHECKING_POSITION) {
-        return SCAN_PHASES.STABILIZING;
-      }
-      return prev;
-    });
-    setErrorMsg('');
-
-    // Handle Countdown logic purely by collecting good frames
-    // We expect ~30 frames per second. Collecting ~60 good frames = 2 seconds
-    measurementsRef.current.push(landmarks);
-    
-    const framesCount = measurementsRef.current.length;
-    if (framesCount < 20) {
-      setCountdown(3);
-    } else if (framesCount < 40) {
-      setCountdown(2);
-    } else if (framesCount < 60) {
-      setCountdown(1);
-    } else if (framesCount < 70) {
-      setPhase(SCAN_PHASES.MEASURING);
-      setCountdown(null);
-    } else if (framesCount >= 70) {
-      setPhase(SCAN_PHASES.CALCULATING);
-      processMeasurements();
+    const pose = validateFoldedPose(landmarks);
+    if (!pose.isCorrectPose) {
+      setPhase(SCAN_PHASES.CHECKING_POSITION);
+      setErrorMsg(pose.reason);
+      return;
     }
 
-  }, [phase, canvasRef, videoRef]);
+    // Stability Calculation
+    let currentStability = 100;
+    if (previousLandmarksRef.current && frameCountRef.current > 1) {
+       // Check movement of wrist over last frame
+       const dx = landmarks[0].x - previousLandmarksRef.current[0].x;
+       const dy = landmarks[0].y - previousLandmarksRef.current[0].y;
+       const dist = Math.sqrt(dx*dx + dy*dy);
+       if (dist > 0.02) currentStability = 50; // Too much movement
+       else if (dist > 0.01) currentStability = 80;
+    }
+    setStabilityScore(currentStability);
+
+    if (currentStability < 70) {
+      setPhase(SCAN_PHASES.CHECKING_POSITION);
+      setErrorMsg("Please keep your hand steady.");
+      return;
+    }
+
+    // 3. Periodic Lighting Check
+    let lightScore = confidence.lighting;
+    if (frameCountRef.current % 10 === 0) {
+      const light = checkLighting(videoRef.current, canvasRef.current);
+      if (light.score < 60) {
+        setPhase(SCAN_PHASES.CHECKING_POSITION);
+        setErrorMsg(light.reason);
+        return;
+      }
+      lightScore = light.score;
+    }
+
+    // 4. Update Confidence
+    if (frameCountRef.current % 15 === 0) {
+      const overall = calculateConfidence(100, lightScore, pose.score, currentStability);
+      setConfidence({
+        overall,
+        pose: pose.score,
+        lighting: lightScore,
+        stability: currentStability,
+        visibility: 100
+      });
+    }
+
+    // 5. Collect Measurements
+    setPhase(SCAN_PHASES.COLLECTING);
+    setErrorMsg('');
+    const measurements = extractMeasurements(landmarks);
+    measurementBufferRef.current.push(measurements);
+
+    const bufferSize = measurementBufferRef.current.length;
+    setProgress(Math.min((bufferSize / 150) * 100, 100));
+
+    // Adaptive Scan Time Logic
+    if (bufferSize >= 150 || (bufferSize >= 60 && currentStability >= 98)) {
+      setPhase(SCAN_PHASES.CALCULATING);
+      processFinalResult();
+    }
+
+  }, [phase, canvasRef, videoRef, confidence, calibrationScale]);
 
   const drawElegantLandmarks = (ctx, landmarks, width, height) => {
     ctx.save();
-    
-    // Draw soft connecting lines
-    ctx.strokeStyle = 'rgba(212, 175, 55, 0.4)'; // Soft gold
+    ctx.strokeStyle = 'rgba(212, 175, 55, 0.6)';
     ctx.lineWidth = 2;
-    
-    // Helper to draw a line between two landmarks
-    const connect = (idx1, idx2) => {
+    const connect = (i1, i2) => {
       ctx.beginPath();
-      ctx.moveTo(landmarks[idx1].x * width, landmarks[idx1].y * height);
-      ctx.lineTo(landmarks[idx2].x * width, landmarks[idx2].y * height);
+      ctx.moveTo(landmarks[i1].x * width, landmarks[i1].y * height);
+      ctx.lineTo(landmarks[i2].x * width, landmarks[i2].y * height);
       ctx.stroke();
     };
-
-    // Draw primary palm lines
-    connect(0, 1); connect(1, 2); connect(2, 3); connect(3, 4); // thumb
-    connect(0, 5); connect(5, 6); connect(6, 7); connect(7, 8); // index
-    connect(0, 9); connect(9, 10); connect(10, 11); connect(11, 12); // middle
-    connect(0, 13); connect(13, 14); connect(14, 15); connect(15, 16); // ring
-    connect(0, 17); connect(17, 18); connect(18, 19); connect(19, 20); // pinky
-    // Connect knuckles
-    connect(5, 9); connect(9, 13); connect(13, 17);
-
-    // Draw points
-    landmarks.forEach((landmark, index) => {
-      ctx.beginPath();
-      ctx.arc(landmark.x * width, landmark.y * height, 3, 0, 2 * Math.PI);
-      ctx.fillStyle = '#d4af37'; // Solid gold
-      ctx.fill();
-      
-      // Draw outer glow for knuckles
-      if ([5, 9, 13, 17].includes(index)) {
-        ctx.beginPath();
-        ctx.arc(landmark.x * width, landmark.y * height, 8, 0, 2 * Math.PI);
-        ctx.fillStyle = 'rgba(212, 175, 55, 0.2)';
-        ctx.fill();
-      }
-    });
-    
+    // Basic structural lines for visual feedback
+    connect(0, 1); connect(1, 2); connect(2, 3); connect(3, 4);
+    connect(0, 5); connect(5, 9); connect(9, 13); connect(13, 17); connect(0, 17);
     ctx.restore();
   };
 
-  const processMeasurements = () => {
-    if (isDestroyed.current) return;
+  const processFinalResult = () => {
+    const stats = analyzeMeasurements(measurementBufferRef.current);
+    if (!stats || !stats.isValid) {
+      // Failed consistency check (average vs median varied too much)
+      setErrorMsg("Measurements were inconsistent. Restarting scan...");
+      setTimeout(() => {
+        setPhase(SCAN_PHASES.SEARCHING);
+        measurementBufferRef.current = [];
+        setProgress(0);
+      }, 2000);
+      return;
+    }
+
+    let estimatedMm = 0;
+    if (scanMode === 'HIGH_ACCURACY' && calibrationScale) {
+       // Using card scale: calibrationScale is mm/pixel. We need pixel width of palm.
+       // Note: stats.averageWidthNorm is normalized. To get pixels we multiply by video width.
+       // However, since we used normalized distance, calibrationScale should ideally be mm / normalizedUnit.
+       estimatedMm = stats.averageWidthNorm * calibrationScale;
+    } else {
+       // Fallback heuristic
+       estimatedMm = estimatePhysicalSize(stats.averageWidthNorm, stats.avgHandLengthNorm);
+    }
+
+    const finalSize = calculateBangleSize(estimatedMm);
     
-    // Average out the measurements over the stable frames
-    let totalPalmWidthNorm = 0;
-    let totalHandLengthNorm = 0;
-    
-    // Take the last 20 frames for the most stable average
-    const recentFrames = measurementsRef.current.slice(-20);
-    
-    recentFrames.forEach(landmarks => {
-      const indexMcp = landmarks[HAND_LANDMARKS.INDEX_FINGER_MCP];
-      const pinkyMcp = landmarks[HAND_LANDMARKS.PINKY_MCP];
-      const wrist = landmarks[HAND_LANDMARKS.WRIST];
-      const middleTip = landmarks[HAND_LANDMARKS.MIDDLE_FINGER_TIP];
+    // History Check
+    const history = JSON.parse(sessionStorage.getItem('sizeScanHistory') || '[]');
+    let shouldRescan = false;
+    if (history.length > 0) {
+      const lastScan = history[history.length - 1];
+      const sizeDiff = Math.abs(parseFloat(lastScan.size) - parseFloat(finalSize.size));
+      if (sizeDiff > 0.2) { // Differs by more than 1 adjacent size (2.2, 2.4)
+        shouldRescan = true;
+      }
+    }
+
+    if (shouldRescan && history.length < 3) {
+      setErrorMsg("Measurements differ from previous scan. Let's do one more for accuracy.");
+      history.push(finalSize);
+      sessionStorage.setItem('sizeScanHistory', JSON.stringify(history));
       
-      totalPalmWidthNorm += calculateDistance2D(indexMcp, pinkyMcp);
-      totalHandLengthNorm += calculateDistance2D(wrist, middleTip);
-    });
-    
-    const avgPalmWidthNorm = totalPalmWidthNorm / recentFrames.length;
-    const avgHandLengthNorm = totalHandLengthNorm / recentFrames.length;
-    
-    const estimatedMm = estimatePhysicalSize(avgPalmWidthNorm, avgHandLengthNorm);
-    const bangleSizeResult = calculateBangleSize(estimatedMm);
-    
+      setTimeout(() => {
+        setPhase(SCAN_PHASES.SEARCHING);
+        measurementBufferRef.current = [];
+        setProgress(0);
+      }, 3000);
+      return;
+    }
+
+    history.push(finalSize);
+    sessionStorage.setItem('sizeScanHistory', JSON.stringify(history));
+
     setResult({
-      ...bangleSizeResult,
-      innerDiameter: estimatedMm.toFixed(1)
+      ...finalSize,
+      innerDiameter: estimatedMm.toFixed(1),
+      confidenceStars: Math.max(1, Math.min(5, Math.floor(confidence.overall / 20)))
     });
     setPhase(SCAN_PHASES.COMPLETE);
-    destroyResources(); // Auto destroy immediately after result!
+    destroyResources();
   };
 
   return {
     videoRef,
     canvasRef,
     phase,
-    qualityScore,
-    countdown,
+    scanMode,
+    confidence,
+    progress,
     result,
     errorMsg,
+    selectMode,
+    completeCalibration,
     startScanner,
     destroyResources,
     reset

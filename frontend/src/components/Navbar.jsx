@@ -273,8 +273,7 @@ const Navbar = () => {
       name: "OUR SERVICES", 
       dropdown: dbCategories.filter(c => c.group === 'Our Services').map(c => ({ name: c.name, href: getCategorySlug(c.name) }))
     },
-    { name: "DESIGN STUDIO", href: "/category/organiser" },
-    { name: "✨ SIZE FINDER", href: "/size-finder" }
+    { name: "SIZE FINDER", href: "/size-finder" }
   ];
 
   return (
@@ -538,14 +537,9 @@ const Navbar = () => {
                     </div>
                   </div>
 
-                  {/* DESIGN STUDIO */}
-                  <Link to="/category/organiser" className="category-link" onClick={() => setIsMobileMenuOpen(false)}>
-                    DESIGN STUDIO
-                  </Link>
-
                   {/* SIZE FINDER */}
                   <Link to="/size-finder" className="category-link" onClick={() => setIsMobileMenuOpen(false)}>
-                    ✨ SIZE FINDER
+                    SIZE FINDER
                   </Link>
 
                   {/* Festival Link in Mobile Menu */}

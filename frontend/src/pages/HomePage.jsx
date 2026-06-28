@@ -5,9 +5,6 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import gsap from 'gsap';
 import API_BASE from '../config/api';
-import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
-import SizeFinder from './SizeFinder';
-
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState([]);
   const [loading, setLoading] = useState(true);

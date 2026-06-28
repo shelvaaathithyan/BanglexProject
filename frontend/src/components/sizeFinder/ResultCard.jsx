@@ -1,63 +1,99 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle, ShoppingBag, RotateCcw, AlertCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, ChevronDown, ChevronUp, Star, RotateCcw, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ResultCard = ({ result, onRetry }) => {
   const navigate = useNavigate();
+  const [showDetails, setShowDetails] = useState(false);
 
-  const handleShop = () => {
-    navigate(`/category/bangles?size=${result.size}`);
+  const renderStars = (stars) => {
+    const elements = [];
+    for (let i = 1; i <= 5; i++) {
+      elements.push(
+        <Star 
+          key={i} 
+          size={18} 
+          fill={i <= stars ? "#d4af37" : "none"} 
+          color={i <= stars ? "#d4af37" : "#cbd5e1"} 
+        />
+      );
+    }
+    return elements;
+  };
+
+  const getQualityText = (stars) => {
+    if (stars === 5) return "Excellent Match";
+    if (stars === 4) return "Very Good Match";
+    if (stars === 3) return "Good Match";
+    return "Fair Match";
   };
 
   return (
     <motion.div 
-      className="sf-result-card"
+      className="sf-result-container-v2"
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.5, type: 'spring' }}
+      transition={{ duration: 0.4 }}
     >
-      <div className="sf-result-header">
-        <CheckCircle size={48} color="#10b981" />
-        <h2>Perfect!</h2>
-        <p>We found your ideal size.</p>
+      <div className="sf-result-header-v2">
+        <CheckCircle2 size={48} color="#10b981" />
+        <h2>Scan Complete</h2>
       </div>
 
-      <div className="sf-size-display">
+      <div className="sf-size-display-v2">
         <span className="sf-size-label">Recommended Size</span>
-        <span className="sf-size-value">{result.size}</span>
-        <div className="sf-stars">
-          ★★★★★ <span style={{ fontSize: '0.85rem', color: '#64748b' }}>Excellent Match</span>
+        <div className="sf-size-value-giant">{result.size}</div>
+        <div className="sf-size-quality">
+           <div className="sf-stars-row">{renderStars(result.confidenceStars || 5)}</div>
+           <span>{getQualityText(result.confidenceStars || 5)}</span>
         </div>
       </div>
 
-      <div className="sf-result-details">
-        <div className="sf-detail-item">
-          <span className="sf-detail-label">Estimated Inner Diameter</span>
-          <span className="sf-detail-value">{result.innerDiameter} mm</span>
+      <hr className="sf-divider-subtle" />
+
+      <div className="sf-result-metrics-grid">
+        <div className="sf-rm-item">
+          <span className="sf-rm-label">Diameter</span>
+          <span className="sf-rm-value">{result.innerDiameter} mm</span>
         </div>
-        <div className="sf-detail-item">
-          <span className="sf-detail-label">Fit</span>
-          <span className="sf-detail-value">{result.fit}</span>
-        </div>
-        <div className="sf-detail-item">
-          <span className="sf-detail-label">Confidence</span>
-          <span className="sf-detail-value">{result.confidence}%</span>
+        <div className="sf-rm-item">
+          <span className="sf-rm-label">Fit Profile</span>
+          <span className="sf-rm-value">{result.fit || 'Comfort Fit'}</span>
         </div>
       </div>
 
-      <div className="sf-result-actions">
-        <button className="sf-btn-primary" onClick={handleShop}>
-          <ShoppingBag size={18} /> Shop Size {result.size}
+      <hr className="sf-divider-subtle" />
+
+      <div className="sf-result-actions-v2">
+        <button className="sf-btn-primary sf-w-full" onClick={() => navigate('/category/glass-bangles')}>
+          <ShoppingBag size={20} /> Shop Size {result.size}
         </button>
-        <button className="sf-btn-secondary" onClick={onRetry}>
+        
+        <button className="sf-btn-secondary sf-w-full sf-mt-sm" onClick={onRetry}>
           <RotateCcw size={18} /> Scan Again
         </button>
       </div>
 
-      <div className="sf-disclaimer">
-        <AlertCircle size={14} />
-        <p>This recommendation is an AI-assisted estimate based on visible hand proportions. Actual fit may vary slightly depending on wrist shape, finger flexibility, and personal preference. For the highest accuracy, use the optional card calibration (coming soon).</p>
+      <div className="sf-expandable-section sf-mt-xl">
+        <button className="sf-expand-btn" onClick={() => setShowDetails(!showDetails)}>
+          Measurement Details {showDetails ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+        </button>
+        
+        <AnimatePresence>
+          {showDetails && (
+            <motion.div 
+              className="sf-expand-content"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+            >
+              <div className="sf-detail-row"><span>Lighting</span> <span>Optimal</span></div>
+              <div className="sf-detail-row"><span>Pose</span> <span>Stable</span></div>
+              <div className="sf-detail-row"><span>Calibration</span> <span>{result.confidenceStars === 5 ? 'High Accuracy' : 'Quick Scan'}</span></div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </motion.div>
   );

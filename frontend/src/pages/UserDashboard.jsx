@@ -205,12 +205,6 @@ const UserDashboard = () => {
                   {savedLooks.length > 0 && <span className="sidebar-badge">{savedLooks.length}</span>}
                 </button>
                 <button 
-                  className={`sidebar-nav-item ${activeTab === 'studio' ? 'active' : ''}`}
-                  onClick={() => setActiveTab('studio')}
-                >
-                  <Paintbrush size={18} /> My Design Studio
-                </button>
-                <button 
                   className={`sidebar-nav-item ${activeTab === 'cart' ? 'active' : ''}`}
                   onClick={() => setActiveTab('cart')}
                 >
@@ -416,10 +410,9 @@ const UserDashboard = () => {
               )}
               
               {/* Placeholders for other tabs */}
-              {['studio', 'points', 'address'].includes(activeTab) && (
+              {['points', 'address'].includes(activeTab) && (
                 <section className="orders-section">
                   <h2 className="section-title">
-                    {activeTab === 'studio' && 'My Design Studio'}
                     {activeTab === 'points' && 'My Points'}
                     {activeTab === 'address' && 'My Address'}
                   </h2>
