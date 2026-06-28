@@ -308,15 +308,21 @@ body {
 
 @keyframes scrollText {
   from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  to { transform: translateX(-100%); }
+}
+
+.marquee-container {
+  display: flex;
+  overflow: hidden;
+  width: 100%;
 }
 
 .marquee-content {
-  display: inline-flex;
+  flex-shrink: 0;
+  display: flex;
+  min-width: 100%;
+  animation: scrollText 60s linear infinite;
   white-space: nowrap;
-  animation: scrollText 30s linear infinite;
-  gap: 3rem;
-  padding-right: 3rem;
 }
 
 

@@ -1238,7 +1238,7 @@ const AdminDashboard = () => {
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#e11d48' }}>
                     <Tag size={24} />
                   </div>
-                  <div>
+                  <div style={{ textAlign: 'center', width: '100%' }}>
                     <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Active Offers</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>{allFestivals.filter(f => getFestivalStatus(f) === 'On-Going').length}</div>
                     <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Currently running</div>
@@ -1248,7 +1248,7 @@ const AdminDashboard = () => {
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a' }}>
                     <Calendar size={24} />
                   </div>
-                  <div>
+                  <div style={{ textAlign: 'center', width: '100%' }}>
                     <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Upcoming Offers</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>{allFestivals.filter(f => getFestivalStatus(f) === 'Scheduled').length}</div>
                     <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Scheduled</div>
@@ -1258,7 +1258,7 @@ const AdminDashboard = () => {
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#e0e7ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#4f46e5' }}>
                     <Percent size={24} />
                   </div>
-                  <div>
+                  <div style={{ textAlign: 'center', width: '100%' }}>
                     <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Total Festivals</div>
                     <div style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>{allFestivals.length}</div>
                     <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Created across platform</div>
@@ -1268,7 +1268,7 @@ const AdminDashboard = () => {
                   <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
                     <ShoppingBag size={24} />
                   </div>
-                  <div>
+                  <div style={{ textAlign: 'center', width: '100%' }}>
                     <div style={{ color: '#64748b', fontSize: '0.875rem', fontWeight: 500 }}>Total Usage</div>
                     <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#0f172a' }}>0</div>
                     <div style={{ color: '#64748b', fontSize: '0.75rem' }}>Redemptions</div>

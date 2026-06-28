@@ -281,29 +281,64 @@ const Navbar = () => {
       <div className="store-navbar-wrapper" ref={navbarRef}>
         {/* Top Banner */}
         <div className="top-banner">
-          {activeFestival ? (
-            activeFestival.isDown ? (
-              <div className="marquee-content" style={{ display: 'flex', width: 'max-content', color: 'inherit' }}>
-                {[...Array(12)].map((_, i) => (
-                  <span key={i} style={{ paddingRight: '3rem' }}>
-                    <span className="festival-name-golden">{activeFestival.name}</span>
-                    {' '} is down, we will get back soon!
+          <div className="marquee-container">
+            {/* Render two identical content blocks for seamless looping */}
+            <div className="marquee-content" style={{ color: 'inherit' }}>
+              {activeFestival ? (
+                activeFestival.isDown ? (
+                  [...Array(12)].map((_, i) => (
+                    <span key={`down-1-${i}`} style={{ paddingRight: '3rem' }}>
+                      <span className="festival-name-golden">{activeFestival.name}</span>
+                      {' '} is down, we will get back soon!
+                    </span>
+                  ))
+                ) : (
+                  <Link to="/offer" style={{ display: 'contents', textDecoration: 'none', color: 'inherit' }}>
+                    {[...Array(12)].map((_, i) => (
+                      <span key={`offer-1-${i}`} style={{ paddingRight: '3rem' }}>
+                        <span className="festival-name-golden">{activeFestival.name}</span>
+                        {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF!
+                      </span>
+                    ))}
+                  </Link>
+                )
+              ) : (
+                [...Array(12)].map((_, i) => (
+                  <span key={`free-1-${i}`} style={{ paddingRight: '3rem' }}>
+                    🚚 FREE SHIPPING ON ALL ORDERS ABOVE ₹999!
                   </span>
-                ))}
-              </div>
-            ) : (
-              <Link to="/offer" className="marquee-content" style={{ display: 'flex', width: 'max-content', textDecoration: 'none', color: 'inherit' }}>
-                {[...Array(12)].map((_, i) => (
-                  <span key={i} style={{ paddingRight: '3rem' }}>
-                    <span className="festival-name-golden">{activeFestival.name}</span>
-                    {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF!
+                ))
+              )}
+            </div>
+            
+            <div className="marquee-content" style={{ color: 'inherit' }} aria-hidden="true">
+              {activeFestival ? (
+                activeFestival.isDown ? (
+                  [...Array(12)].map((_, i) => (
+                    <span key={`down-2-${i}`} style={{ paddingRight: '3rem' }}>
+                      <span className="festival-name-golden">{activeFestival.name}</span>
+                      {' '} is down, we will get back soon!
+                    </span>
+                  ))
+                ) : (
+                  <Link to="/offer" style={{ display: 'contents', textDecoration: 'none', color: 'inherit' }}>
+                    {[...Array(12)].map((_, i) => (
+                      <span key={`offer-2-${i}`} style={{ paddingRight: '3rem' }}>
+                        <span className="festival-name-golden">{activeFestival.name}</span>
+                        {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF!
+                      </span>
+                    ))}
+                  </Link>
+                )
+              ) : (
+                [...Array(12)].map((_, i) => (
+                  <span key={`free-2-${i}`} style={{ paddingRight: '3rem' }}>
+                    🚚 FREE SHIPPING ON ALL ORDERS ABOVE ₹999!
                   </span>
-                ))}
-              </Link>
-            )
-          ) : (
-            <p>🚚 FREE SHIPPING ON ALL ORDERS ABOVE ₹999!</p>
-          )}
+                ))
+              )}
+            </div>
+          </div>
         </div>
 
         <nav className="store-navbar">
