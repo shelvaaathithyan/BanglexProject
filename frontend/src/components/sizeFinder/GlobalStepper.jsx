@@ -1,17 +1,16 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Check, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Check } from 'lucide-react';
 
 const steps = [
   { id: 'intro', label: 'Intro', title: 'Introduction', subtitle: 'Find your perfect bangle size' },
   { id: 'mode', label: 'Mode', title: 'Scan Mode', subtitle: 'Select your preferred scanning method.' },
   { id: 'guide', label: 'Guide', title: 'Instructions', subtitle: 'Prepare for the best accuracy.' },
   { id: 'scan', label: 'Scan', title: 'Camera Scan', subtitle: 'Position your hand inside the guide.' },
-  { id: 'ai', label: 'AI', title: 'Processing', subtitle: 'Analyzing measurements...' },
   { id: 'result', label: 'Result', title: 'Scan Complete', subtitle: 'Your recommended size is ready.' }
 ];
 
-const GlobalStepper = ({ currentStepIndex, onPrev, onNext }) => {
+const GlobalStepper = ({ currentStepIndex }) => {
   const currentStepData = steps[Math.min(currentStepIndex, steps.length - 1)];
 
   return (
@@ -31,6 +30,13 @@ const GlobalStepper = ({ currentStepIndex, onPrev, onNext }) => {
                     animate={{ scale: isActive ? 1.08 : 1 }}
                     transition={{ duration: 0.3 }}
                   >
+                    {isActive && (
+                      <motion.div 
+                        className="sf-node-pulse-ring"
+                        animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+                        transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                      />
+                    )}
                     {isCompleted && (
                       <motion.div 
                         initial={{ scale: 0 }} 
@@ -58,7 +64,7 @@ const GlobalStepper = ({ currentStepIndex, onPrev, onNext }) => {
                       className="sf-stepper-line-fill-v3"
                       initial={{ width: '0%' }}
                       animate={{ width: isCompleted ? '100%' : '0%' }}
-                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      transition={{ duration: 0.4, ease: "easeInOut" }}
                     />
                   </div>
                 )}
@@ -67,36 +73,20 @@ const GlobalStepper = ({ currentStepIndex, onPrev, onNext }) => {
           })}
         </div>
 
-        <motion.div 
-          className="sf-step-title-container-v3"
-          key={currentStepData.id}
-          initial={{ opacity: 0, y: 5 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-        >
-          <div className="sf-step-title-text-v3">Step {currentStepIndex + 1}</div>
-          <h2 className="sf-step-main-title-v3">{currentStepData.title}</h2>
-          <p className="sf-step-subtitle-v3">{currentStepData.subtitle}</p>
-        </motion.div>
-        
-        {/* Buttons (Hidden on Result step) */}
-        {currentStepIndex < steps.length - 1 && (
-          <div className="sf-stepper-navigation-v3">
-            <button 
-              className="sf-btn-prev-v3" 
-              onClick={onPrev} 
-              disabled={currentStepIndex === 0}
-            >
-              <ArrowLeft size={18} /> Previous
-            </button>
-            <button 
-              className="sf-btn-next-v3" 
-              onClick={onNext}
-            >
-              Continue
-            </button>
-          </div>
-        )}
+        <AnimatePresence mode="wait">
+          <motion.div 
+            className="sf-step-title-container-v3"
+            key={currentStepData.id}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -5 }}
+            transition={{ duration: 0.3, ease: "easeInOut" }}
+          >
+            <div className="sf-step-title-text-v3">Step {currentStepIndex + 1}</div>
+            <h2 className="sf-step-main-title-v3">{currentStepData.title}</h2>
+            <p className="sf-step-subtitle-v3">{currentStepData.subtitle}</p>
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

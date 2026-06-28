@@ -8,8 +8,9 @@ import { checkLighting, calculateConfidence } from '../utils/handScannerPipeline
 import { estimatePhysicalSize, calibrateWithCard } from '../utils/calibrationUtils';
 import { calculateBangleSize } from '../utils/bangleSizeCalculator';
 
-const Hands = window.Hands;
-const Camera = window.Camera;
+// Resolved at runtime, not module load — CDN scripts may not be ready yet
+// const Hands = window.Hands;
+// const Camera = window.Camera;
 
 export const SCAN_PHASES = {
   SELECT_MODE: 'SELECT_MODE',
@@ -108,7 +109,8 @@ export const useHandScanner = () => {
 
   const completeCalibration = (scale) => {
     if (scale) setCalibrationScale(scale);
-    startScanner();
+    // Camera and MediaPipe are already running, just switch to scanning phase
+    setPhase(SCAN_PHASES.SEARCHING);
   };
 
   const startScanner = useCallback(async () => {
@@ -120,6 +122,13 @@ export const useHandScanner = () => {
     frameCountRef.current = 0;
     
     try {
+      const Hands = window.Hands;
+      const Camera = window.Camera;
+
+      if (!Hands || !Camera) {
+        throw new Error("MediaPipe libraries not loaded. Please refresh the page and try again.");
+      }
+
       handsRef.current = new Hands({
         locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
       });
@@ -158,7 +167,7 @@ export const useHandScanner = () => {
   }, [videoRef, canvasRef, destroyResources]);
 
   const onResults = useCallback((results) => {
-    if (isDestroyed.current || phase === SCAN_PHASES.COMPLETE) return;
+    if (isDestroyed.current || phase === SCAN_PHASES.COMPLETE || phase === SCAN_PHASES.CALIBRATING) return;
 
     frameCountRef.current += 1;
     const ctx = canvasRef.current?.getContext('2d');
@@ -345,7 +354,9 @@ export const useHandScanner = () => {
     videoRef,
     canvasRef,
     phase,
+    setPhase,
     scanMode,
+    setScanMode,
     confidence,
     progress,
     result,
