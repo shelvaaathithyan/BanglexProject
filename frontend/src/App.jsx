@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
 import ProductDetailPage from './pages/ProductDetailPage';
 import FestivalOfferPage from './pages/FestivalOfferPage';
+import SizeFinder from './pages/SizeFinder';
 import './index.css';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
         <Route path="/login" element={<LoginSignup />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/size-finder" element={<SizeFinder />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

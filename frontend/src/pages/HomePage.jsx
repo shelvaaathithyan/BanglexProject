@@ -472,11 +472,6 @@ const HomePage = () => {
         )}
       </section>
 
-      {/* AI Size Finder Section */}
-      <section id="size-finder">
-        <SizeFinder />
-      </section>
-
       <Footer />
     </div>
   );

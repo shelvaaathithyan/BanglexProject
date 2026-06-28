@@ -274,7 +274,7 @@ const Navbar = () => {
       dropdown: dbCategories.filter(c => c.group === 'Our Services').map(c => ({ name: c.name, href: getCategorySlug(c.name) }))
     },
     { name: "DESIGN STUDIO", href: "/category/organiser" },
-    { name: "✨ SIZE FINDER", href: "/home#size-finder" }
+    { name: "✨ SIZE FINDER", href: "/size-finder" }
   ];
 
   return (
@@ -466,13 +466,6 @@ const Navbar = () => {
                         </div>
                       );
                     } else {
-                      if (link.href.includes('#')) {
-                        return (
-                          <a key={index} href={link.href} className="category-link">
-                            {link.name}
-                          </a>
-                        );
-                      }
                       return (
                         <Link key={index} to={link.href} className="category-link">
                           {link.name}
@@ -551,9 +544,9 @@ const Navbar = () => {
                   </Link>
 
                   {/* SIZE FINDER */}
-                  <a href="/home#size-finder" className="category-link" onClick={() => setIsMobileMenuOpen(false)}>
+                  <Link to="/size-finder" className="category-link" onClick={() => setIsMobileMenuOpen(false)}>
                     ✨ SIZE FINDER
-                  </a>
+                  </Link>
 
                   {/* Festival Link in Mobile Menu */}
                   {activeFestival && !activeFestival.isDown && (

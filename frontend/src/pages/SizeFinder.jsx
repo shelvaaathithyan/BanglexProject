@@ -5,6 +5,8 @@ import PermissionScreen from '../components/sizeFinder/PermissionScreen';
 import CameraScanner from '../components/sizeFinder/CameraScanner';
 import ResultCard from '../components/sizeFinder/ResultCard';
 import { useHandScanner, SCAN_PHASES } from '../hooks/useHandScanner';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import '../styles/sizeFinder.css';
 import { Camera } from 'lucide-react';
 
@@ -13,8 +15,6 @@ const SizeFinder = () => {
   const scannerHook = useHandScanner();
 
   useEffect(() => {
-    // Scroll to top on mount
-    window.scrollTo(0, 0);
     // Cleanup on unmount handled strictly by hook
   }, []);
 
@@ -29,21 +29,18 @@ const SizeFinder = () => {
   };
 
   return (
-    <div className="sf-section">
-      <div className="sf-container">
+    <div className="category-page">
+      <Navbar />
+      <div className="sf-section" style={{ minHeight: 'calc(100vh - 200px)' }}>
+        <div className="sf-container">
         
         {!hasPermission && scannerHook.phase !== SCAN_PHASES.COMPLETE && (
-          <>
-            <Hero />
-            
-            <div className="sf-start-section">
-              <button className="sf-btn-primary sf-start-btn" onClick={() => setHasPermission('prompt')}>
-                Start Size Scan
-              </button>
+          <div className="sf-landing-wrapper">
+            <Hero setHasPermission={setHasPermission} />
+            <div className="sf-info-overlap">
+              <InfoCards />
             </div>
-
-            <InfoCards />
-          </>
+          </div>
         )}
 
         {hasPermission === 'prompt' && (
@@ -66,7 +63,9 @@ const SizeFinder = () => {
           </div>
         )}
 
+        </div>
       </div>
+      <Footer />
     </div>
   );
 };
