@@ -37,11 +37,7 @@ const CameraScanner = ({ scannerHook, localMode }) => {
     console.log('[CameraScanner] Calling startScanner() directly...');
     startScanner().then(() => {
       console.log('[CameraScanner] startScanner() resolved. Phase should be SEARCHING now.');
-      // For HIGH_ACCURACY, after camera is running, show calibration overlay on top
-      if (localMode === 'HIGH_ACCURACY') {
-        console.log('[CameraScanner] Setting phase to CALIBRATING for card calibration.');
-        setPhase(SCAN_PHASES.CALIBRATING);
-      }
+      // No longer entering CALIBRATING phase for HIGH_ACCURACY
     }).catch(err => {
       console.error('[CameraScanner] startScanner() failed:', err);
     });
@@ -184,23 +180,7 @@ const CameraScanner = ({ scannerHook, localMode }) => {
             </motion.div>
           )}
 
-          {/* Calibration Overlay */}
-          {phase === SCAN_PHASES.CALIBRATING && (
-            <motion.div 
-              className="sf-calibration-overlay-v3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-            >
-              <div className="sf-card-outline-v3">
-                 <Maximize size={32} />
-                 <span>Place Debit/Credit Card Here</span>
-              </div>
-              <button className="sf-btn-primary sf-mt-xl" onClick={() => completeCalibration(85.6 / 300)}>
-                <CameraIcon size={18} /> Capture Calibration
-              </button>
-            </motion.div>
-          )}
+          {/* Calibration Overlay Removed */}
 
           {/* Processing Timeline Overlay */}
           {phase === SCAN_PHASES.CALCULATING && (
@@ -220,10 +200,7 @@ const CameraScanner = ({ scannerHook, localMode }) => {
                     <div className="sf-tl-dot-v4" /> 
                     <span className="sf-tl-text-v4">Detecting</span>
                   </div>
-                  <div className={`sf-tl-step-v4 ${processingStep >= 1 ? 'active' : ''}`}>
-                    <div className="sf-tl-dot-v4" /> 
-                    <span className="sf-tl-text-v4">Calibrating</span>
-                  </div>
+                  {/* Calibrating step removed from timeline */}
                   <div className={`sf-tl-step-v4 ${processingStep >= 2 ? 'active' : ''}`}>
                     <div className="sf-tl-dot-v4" /> 
                     <span className="sf-tl-text-v4">Measuring</span>

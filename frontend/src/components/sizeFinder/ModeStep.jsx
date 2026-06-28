@@ -14,9 +14,10 @@ const ModeStep = ({ onSelectMode, currentMode }) => {
             <p className="sf-mode-desc-v4">Recommended for most users</p>
           </div>
           <ul className="sf-mode-features-v4">
-            <li><span className="sf-feature-label">Speed</span> ⚡ 15 Seconds</li>
-            <li><span className="sf-feature-label">Accuracy</span> <span style={{ color: '#D4AF37' }}>★★★★☆</span> Good</li>
-            <li><span className="sf-feature-label">Requirement</span> No Card Needed</li>
+            <li>⚡ ~15 Seconds</li>
+            <li>Great Accuracy</li>
+            <li>Fast Recommendation</li>
+            <li>Recommended for most users</li>
           </ul>
         </div>
         
@@ -31,9 +32,10 @@ const ModeStep = ({ onSelectMode, currentMode }) => {
             <p className="sf-mode-desc-v4">For professional measurement</p>
           </div>
           <ul className="sf-mode-features-v4">
-            <li><span className="sf-feature-label">Speed</span> ⚡ 30 Seconds</li>
-            <li><span className="sf-feature-label">Accuracy</span> <span style={{ color: '#D4AF37' }}>★★★★★</span> Perfect</li>
-            <li><span className="sf-feature-label">Requirement</span> Debit/Credit Card</li>
+            <li>🎯 ~30 Seconds</li>
+            <li>Highest Accuracy</li>
+            <li>Advanced AI Measurement</li>
+            <li>Recommended for maximum precision</li>
           </ul>
         </div>
       </div>
