@@ -206,6 +206,26 @@ const FestivalOfferPage = () => {
     );
   }
 
+  if (festival.isDown) {
+    return (
+      <div className="festival-offer-page" style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+        <Navbar />
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', padding: '40px 20px' }}>
+          <div>
+            <h1 style={{ fontSize: '2rem', color: '#0f172a', marginBottom: '1rem', fontFamily: "'Poppins', sans-serif" }}>
+              {festival.name} is Temporarily Unavailable
+            </h1>
+            <p style={{ color: '#64748b', fontSize: '1.1rem', maxWidth: '600px', margin: '0 auto', fontFamily: "'Poppins', sans-serif" }}>
+              This offer is currently being updated. We'll be back with exciting deals very soon — stay tuned!
+            </p>
+            <Link to="/home" style={{ display: 'inline-block', marginTop: '2rem', padding: '0.65rem 2rem', background: '#0f172a', color: '#fff', borderRadius: '8px', fontWeight: 600, fontSize: '0.9rem', textDecoration: 'none', fontFamily: "'Poppins', sans-serif" }}>Return Home</Link>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
   const renderProducts = (productsToRender) => {
     if (!productsToRender || productsToRender.length === 0) {
       return <div style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>No products found for this offer.</div>;

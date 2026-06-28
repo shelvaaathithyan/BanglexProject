@@ -113,6 +113,75 @@ router.get('/', async (req, res) => {
   }
 });
 
+// Update a festival offer
+router.put('/:id', upload.fields([{ name: 'desktopBanner', maxCount: 1 }, { name: 'mobileBanner', maxCount: 1 }]), async (req, res) => {
+  try {
+    const {
+      name, description, discountType, discountValue, applyTo,
+      categories, products, startDate, startTime, endDate, endTime,
+      bannerText, showBadge, showTimer, featureOnHome, isActive
+    } = req.body;
+
+    const festival = await Festival.findById(req.params.id);
+    if (!festival) {
+      return res.status(404).json({ message: 'Festival not found' });
+    }
+
+    let parsedCategories = [];
+    let parsedProducts = [];
+    
+    if (categories) {
+      try {
+        parsedCategories = Array.isArray(categories) ? categories : JSON.parse(categories);
+      } catch (e) {
+        if (typeof categories === 'string' && categories.length > 0) parsedCategories = [categories];
+      }
+    }
+    
+    if (products) {
+      try {
+        parsedProducts = Array.isArray(products) ? products : JSON.parse(products);
+      } catch (e) {
+        if (typeof products === 'string' && products.length > 0) parsedProducts = [products];
+      }
+    }
+
+    if (isActive === 'true' || isActive === true) {
+      await Festival.updateMany({ _id: { $ne: req.params.id } }, { isActive: false });
+    }
+
+    festival.name = name;
+    festival.description = description;
+    festival.discountType = discountType;
+    festival.discountValue = discountValue;
+    festival.applyTo = applyTo;
+    festival.categories = parsedCategories;
+    festival.products = parsedProducts;
+    festival.startDate = startDate;
+    festival.startTime = startTime;
+    festival.endDate = endDate;
+    festival.endTime = endTime;
+    festival.bannerText = bannerText;
+    if (showBadge !== undefined) festival.showBadge = showBadge === 'true' || showBadge === true;
+    if (showTimer !== undefined) festival.showTimer = showTimer === 'true' || showTimer === true;
+    if (featureOnHome !== undefined) festival.featureOnHome = featureOnHome === 'true' || featureOnHome === true;
+    if (isActive !== undefined) festival.isActive = isActive === 'true' || isActive === true;
+
+    if (req.files && req.files['desktopBanner']) {
+      festival.desktopBannerUrl = req.files['desktopBanner'][0].path;
+    }
+    if (req.files && req.files['mobileBanner']) {
+      festival.mobileBannerUrl = req.files['mobileBanner'][0].path;
+    }
+
+    const savedFestival = await festival.save();
+    res.json(savedFestival);
+  } catch (error) {
+    console.error('Error updating festival:', error);
+    res.status(500).json({ message: 'Error updating festival offer' });
+  }
+});
+
 // Delete a festival
 router.delete('/:id', async (req, res) => {
   try {
@@ -151,6 +220,22 @@ router.delete('/:id', async (req, res) => {
   } catch (error) {
     console.error('Error deleting festival:', error);
     res.status(500).json({ message: 'Error deleting festival' });
+  }
+});
+
+// Toggle festival up/down (pause/resume visibility)
+router.patch('/:id/toggle-down', async (req, res) => {
+  try {
+    const festival = await Festival.findById(req.params.id);
+    if (!festival) {
+      return res.status(404).json({ message: 'Festival not found' });
+    }
+    festival.isDown = !festival.isDown;
+    await festival.save();
+    res.json(festival);
+  } catch (error) {
+    console.error('Error toggling festival down status:', error);
+    res.status(500).json({ message: 'Error toggling festival status' });
   }
 });
 

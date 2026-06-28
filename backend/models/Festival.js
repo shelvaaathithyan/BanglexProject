@@ -18,7 +18,8 @@ const festivalSchema = new mongoose.Schema({
   showBadge: { type: Boolean, default: true },
   showTimer: { type: Boolean, default: true },
   featureOnHome: { type: Boolean, default: true },
-  isActive: { type: Boolean, default: true }
+  isActive: { type: Boolean, default: true },
+  isDown: { type: Boolean, default: false }
 }, {
   timestamps: true
 });

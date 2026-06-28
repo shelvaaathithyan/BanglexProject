@@ -282,14 +282,25 @@ const Navbar = () => {
         {/* Top Banner */}
         <div className="top-banner">
           {activeFestival ? (
-            <Link to="/offer" className="marquee-content" style={{ display: 'flex', width: 'max-content', textDecoration: 'none', color: 'inherit' }}>
-              {[...Array(12)].map((_, i) => (
-                <span key={i} style={{ paddingRight: '3rem' }}>
-                  <span className="festival-name-golden">{activeFestival.name}</span>
-                  {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF!
-                </span>
-              ))}
-            </Link>
+            activeFestival.isDown ? (
+              <div className="marquee-content" style={{ display: 'flex', width: 'max-content', color: 'inherit' }}>
+                {[...Array(12)].map((_, i) => (
+                  <span key={i} style={{ paddingRight: '3rem' }}>
+                    <span className="festival-name-golden">{activeFestival.name}</span>
+                    {' '} is down, we will get back soon!
+                  </span>
+                ))}
+              </div>
+            ) : (
+              <Link to="/offer" className="marquee-content" style={{ display: 'flex', width: 'max-content', textDecoration: 'none', color: 'inherit' }}>
+                {[...Array(12)].map((_, i) => (
+                  <span key={i} style={{ paddingRight: '3rem' }}>
+                    <span className="festival-name-golden">{activeFestival.name}</span>
+                    {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF!
+                  </span>
+                ))}
+              </Link>
+            )
           ) : (
             <p>🚚 FREE SHIPPING ON ALL ORDERS ABOVE ₹999!</p>
           )}
@@ -426,7 +437,7 @@ const Navbar = () => {
                       );
                     }
                   })}
-                  {activeFestival && (
+                  {activeFestival && !activeFestival.isDown && (
                     <Link to="/offer" className="category-link" style={{ display: 'flex', alignItems: 'center' }}>
                       <span className="festival-name-golden" style={{ fontWeight: 600 }}>{activeFestival.name}</span>
                     </Link>
@@ -497,7 +508,7 @@ const Navbar = () => {
                   </Link>
 
                   {/* Festival Link in Mobile Menu */}
-                  {activeFestival && (
+                  {activeFestival && !activeFestival.isDown && (
                     <Link to="/offer" onClick={() => setIsMobileMenuOpen(false)} style={{ display: 'block', padding: '1rem 0.5rem', borderTop: '1px solid #e2e8f0', textDecoration: 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Gift size={16} color="#d4af37" />
@@ -705,7 +716,7 @@ const Navbar = () => {
       )}
 
       {/* Festival Side Notification */}
-      {activeFestival && isLoggedIn && !festivalNotifDismissed && (
+      {activeFestival && !activeFestival.isDown && isLoggedIn && !festivalNotifDismissed && (
         <div className="festival-side-notification">
           <button className="festival-notif-close" onClick={() => setFestivalNotifDismissed(true)} aria-label="Close notification">
             <X size={16} />

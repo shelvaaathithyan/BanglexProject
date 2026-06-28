@@ -8,7 +8,7 @@ import {
   ChevronRight, ChevronDown, Heart, Plus, Edit, Trash2, MoreVertical, Filter,
   PartyPopper, Calendar, Percent, Eye, UploadCloud, CheckSquare, Square,
   Image as ImageIcon, Ticket, Save, Rocket, AlertCircle, Info, 
-  ListChecks, CalendarRange, MonitorPlay, ShieldCheck
+  ListChecks, CalendarRange, MonitorPlay, ShieldCheck, ArrowUp, ArrowDown
 } from 'lucide-react';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer,
@@ -183,6 +183,8 @@ const AdminDashboard = () => {
   });
 
   const [isAddingFestival, setIsAddingFestival] = useState(false);
+  const [isEditingFestival, setIsEditingFestival] = useState(false);
+  const [editingFestivalId, setEditingFestivalId] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [festivalToDelete, setFestivalToDelete] = useState(null);
   const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
@@ -208,6 +210,8 @@ const AdminDashboard = () => {
 
   const handleCancelFestival = () => {
     setIsAddingFestival(false);
+    setIsEditingFestival(false);
+    setEditingFestivalId(null);
     setNewFestivalForm({
       name: '',
       description: '',
@@ -232,6 +236,47 @@ const AdminDashboard = () => {
   const handleFestivalInputChange = (e) => {
     const { name, value } = e.target;
     setNewFestivalForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleEditFestivalClick = (fest) => {
+    setIsAddingFestival(true);
+    setIsEditingFestival(true);
+    setEditingFestivalId(fest._id);
+    
+    // Convert ID arrays to name arrays for the form state
+    const catNames = fest.categories ? fest.categories.map(c => {
+      if (typeof c === 'object') return c.name;
+      const found = allCategories.find(cat => cat._id === c || cat.id === c);
+      return found ? found.name : '';
+    }).filter(Boolean) : [];
+    
+    const prodNames = fest.products ? fest.products.map(p => {
+      if (typeof p === 'object') return p.name;
+      const found = allProducts.find(prod => prod._id === p || prod.id === p);
+      return found ? found.name : '';
+    }).filter(Boolean) : [];
+
+    setNewFestivalForm({
+      name: fest.name || '',
+      description: fest.description || '',
+      discountType: fest.discountType || '',
+      discountValue: fest.discountValue || '',
+      applyTo: fest.applyTo || 'All Products',
+      categories: catNames,
+      products: prodNames,
+      startDate: fest.startDate || '',
+      startTime: fest.startTime || '',
+      endDate: fest.endDate || '',
+      endTime: fest.endTime || '',
+      desktopBanner: null,
+      mobileBanner: null,
+      existingDesktopBanner: fest.desktopBannerUrl || '',
+      existingMobileBanner: fest.mobileBannerUrl || '',
+      bannerText: fest.bannerText || '',
+      showBadge: fest.showBadge !== false,
+      showTimer: fest.showTimer !== false,
+      featureOnHome: fest.featureOnHome !== false
+    });
   };
 
   const handleLaunchOffer = async (e) => {
@@ -266,20 +311,31 @@ const AdminDashboard = () => {
       });
       
       // Explicitly set the new festival as active
-      formData.append('isActive', true);
+      if (!isEditingFestival) {
+        formData.append('isActive', true);
+      }
 
-      const res = await fetch(`${API_BASE}/festivals`, {
-        method: 'POST',
+      const url = isEditingFestival ? `${API_BASE}/festivals/${editingFestivalId}` : `${API_BASE}/festivals`;
+      const method = isEditingFestival ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         body: formData
       });
 
       if (res.ok) {
-        alert("Festival offer launched successfully!");
+        alert(isEditingFestival ? "Festival offer updated successfully!" : "Festival offer launched successfully!");
         const newFest = await res.json();
-        setAllFestivals(prev => [newFest, ...prev]);
+        if (isEditingFestival) {
+          setAllFestivals(prev => prev.map(f => f._id === editingFestivalId ? newFest : f));
+        } else {
+          setAllFestivals(prev => [newFest, ...prev]);
+        }
         handleCancelFestival();
       } else {
-        alert("Failed to launch festival offer.");
+        const errText = await res.text();
+        console.error("Backend Error:", res.status, errText);
+        alert(isEditingFestival ? `Failed to update festival offer: ${errText}` : "Failed to launch festival offer.");
       }
     } catch (err) {
       console.error(err);
@@ -557,7 +613,23 @@ const AdminDashboard = () => {
     const end = new Date(`${fest.endDate}T${fest.endTime}`);
     if (now < start) return 'Scheduled';
     if (now > end) return 'Completed';
+    if (fest.isDown) return 'Paused';
     return 'On-Going';
+  };
+
+  const handleToggleDown = async (festivalId) => {
+    try {
+      const res = await fetch(`${API_BASE}/festivals/${festivalId}/toggle-down`, { method: 'PATCH' });
+      if (res.ok) {
+        const updatedFest = await res.json();
+        setAllFestivals(prev => prev.map(f => f._id === festivalId ? updatedFest : f));
+      } else {
+        alert('Failed to toggle festival status.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error connecting to server.');
+    }
   };
 
   const filteredProducts = allProducts.filter(product => {
@@ -1044,7 +1116,7 @@ const AdminDashboard = () => {
             <div className="admin-tab-view">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a' }}>Categories Management</h2>
-                <button onClick={() => { setIsEditingCategory(false); setEditingCategoryId(null); setNewCategoryForm({ name: '', description: '', status: 'Active', group: 'Bangles' }); setIsCategoryModalOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
+                <button onClick={() => { setIsEditingCategory(false); setEditingCategoryId(null); setNewCategoryForm({ name: '', description: '', status: 'Active', group: 'Bangles', imageFile: null }); setIsCategoryModalOpen(true); }} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#e11d48', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '8px', fontWeight: 600, cursor: 'pointer' }}>
                   <Plus size={18} /> Add Category
                 </button>
               </div>
@@ -1274,16 +1346,43 @@ const AdminDashboard = () => {
                             borderRadius: '99px', 
                             fontSize: '0.75rem', 
                             fontWeight: 600,
-                            background: status === 'On-Going' ? '#dcfce7' : status === 'Scheduled' ? '#fef3c7' : '#e0e7ff', 
-                            color: status === 'On-Going' ? '#16a34a' : status === 'Scheduled' ? '#d97706' : '#4f46e5'
+                            background: status === 'On-Going' ? '#dcfce7' : status === 'Scheduled' ? '#fef3c7' : status === 'Paused' ? '#fef3c7' : '#e0e7ff', 
+                            color: status === 'On-Going' ? '#16a34a' : status === 'Scheduled' ? '#d97706' : status === 'Paused' ? '#d97706' : '#4f46e5'
                           }}>
                             {status}
                           </span>
                         </td>
                         <td>
-                          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem' }}>
+                            <button 
+                              title="Bring offer up (show to users)"
+                              disabled={status === 'Completed' || status === 'On-Going' || status === 'Scheduled'}
+                              onClick={() => handleToggleDown(fest._id)}
+                              style={{ 
+                                background: 'none', 
+                                border: 'none', 
+                                cursor: (status === 'Paused') ? 'pointer' : 'not-allowed', 
+                                color: (status === 'Paused') ? '#16a34a' : '#cbd5e1' 
+                              }}
+                            >
+                              <ArrowUp size={16} />
+                            </button>
+                            <button 
+                              title="Take offer down (hide from users)"
+                              disabled={status === 'Completed' || status === 'Paused' || status === 'Scheduled'}
+                              onClick={() => handleToggleDown(fest._id)}
+                              style={{ 
+                                background: 'none', 
+                                border: 'none', 
+                                cursor: (status === 'On-Going') ? 'pointer' : 'not-allowed', 
+                                color: (status === 'On-Going') ? '#ef4444' : '#cbd5e1' 
+                              }}
+                            >
+                              <ArrowDown size={16} />
+                            </button>
                             <button 
                               disabled={status === 'Completed' || status === 'On-Going'}
+                              onClick={() => handleEditFestivalClick(fest)}
                               style={{ 
                                 background: 'none', 
                                 border: 'none', 
@@ -1307,7 +1406,7 @@ const AdminDashboard = () => {
           {activeTab === 'festival' && isAddingFestival && (
             <div className="admin-tab-view">
               <div style={{ marginBottom: '2rem' }}>
-                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.25rem' }}>Add New Festival Offer</h2>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: '#0f172a', marginBottom: '0.25rem' }}>{isEditingFestival ? 'Edit Festival Offer' : 'Add New Festival Offer'}</h2>
                 <p style={{ color: '#64748b', fontSize: '0.875rem' }}>Create festival offers, discounts and promotions for your customers.</p>
               </div>
 
@@ -1438,14 +1537,14 @@ const AdminDashboard = () => {
                             <input type="file" style={{ display: 'none' }} accept="image/*" onChange={(e) => setNewFestivalForm(prev => ({...prev, desktopBanner: e.target.files[0]}))} />
                             <UploadCloud size={20} color="#94a3b8" style={{ margin: '0 auto 0.25rem' }} />
                             <div style={{ fontSize: '0.7rem', color: '#4f46e5', fontWeight: 500 }}>
-                              {newFestivalForm.desktopBanner ? newFestivalForm.desktopBanner.name : "Desktop Banner"}
+                              {newFestivalForm.desktopBanner ? newFestivalForm.desktopBanner.name : (newFestivalForm.existingDesktopBanner ? 'Keep Existing Desktop Banner' : 'Desktop Banner')}
                             </div>
                           </label>
                           <label style={{ flex: 1, display: 'block', border: '1px dashed #cbd5e1', borderRadius: '8px', padding: '0.75rem', textAlign: 'center', cursor: 'pointer', background: '#f8fafc' }}>
                             <input type="file" style={{ display: 'none' }} accept="image/*" onChange={(e) => setNewFestivalForm(prev => ({...prev, mobileBanner: e.target.files[0]}))} />
                             <UploadCloud size={20} color="#94a3b8" style={{ margin: '0 auto 0.25rem' }} />
                             <div style={{ fontSize: '0.7rem', color: '#4f46e5', fontWeight: 500 }}>
-                              {newFestivalForm.mobileBanner ? newFestivalForm.mobileBanner.name : "Mobile Banner"}
+                              {newFestivalForm.mobileBanner ? newFestivalForm.mobileBanner.name : (newFestivalForm.existingMobileBanner ? 'Keep Existing Mobile Banner' : 'Mobile Banner')}
                             </div>
                           </label>
                         </div>
@@ -1478,7 +1577,7 @@ const AdminDashboard = () => {
                   <Save size={16} /> Save Draft
                 </button>
                 <button onClick={handleLaunchOffer} style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: 'none', background: '#e11d48', color: 'white', fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <Rocket size={16} /> Launch Offer
+                  <Rocket size={16} /> {isEditingFestival ? 'Save Changes' : 'Launch Offer'}
                 </button>
               </div>
             </div>
