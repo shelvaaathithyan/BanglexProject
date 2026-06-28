@@ -43,7 +43,7 @@ const GlobalStepper = ({ currentStepIndex }) => {
                         animate={{ scale: 1 }} 
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                       >
-                        <Check size={16} className="sf-check-icon-v3" />
+                        <Check size={16} strokeWidth={3} className="sf-check-icon-v3" />
                       </motion.div>
                     )}
                     {isActive && (

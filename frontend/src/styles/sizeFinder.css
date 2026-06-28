@@ -13,7 +13,8 @@
 }
 
 .sf-heading-acme {
-  font-family: "Acme", sans-serif !important;
+  font-family: 'Poppins', sans-serif !important;
+  font-weight: 700 !important;
 }
 
 .sf-wizard-layout-v2 {
@@ -116,9 +117,9 @@
 }
 
 .sf-step-node-v3.completed .sf-node-circle-v3 {
-  background: #121A33;
+  background: #D4AF37;
   border: none;
-  box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+  box-shadow: 0 0 15px rgba(212, 175, 55, 0.2);
 }
 
 .sf-check-icon-v3 {
@@ -1125,7 +1126,7 @@
   font-weight: 700;
   color: #0f172a;
   line-height: 1;
-  font-family: "Acme", sans-serif;
+  font-family: 'Poppins', sans-serif;
   position: relative;
   z-index: 1;
 }
