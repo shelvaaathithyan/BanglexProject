@@ -282,14 +282,14 @@ const Navbar = () => {
         {/* Top Banner */}
         <div className="top-banner">
           {activeFestival ? (
-            <div className="marquee-content" style={{ display: 'flex', width: 'max-content' }}>
+            <Link to="/offer" className="marquee-content" style={{ display: 'flex', width: 'max-content', textDecoration: 'none', color: 'inherit' }}>
               {[...Array(12)].map((_, i) => (
                 <span key={i} style={{ paddingRight: '3rem' }}>
                   <span className="festival-name-golden">{activeFestival.name}</span>
                   {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF!
                 </span>
               ))}
-            </div>
+            </Link>
           ) : (
             <p>🚚 FREE SHIPPING ON ALL ORDERS ABOVE ₹999!</p>
           )}
@@ -426,6 +426,11 @@ const Navbar = () => {
                       );
                     }
                   })}
+                  {activeFestival && (
+                    <Link to="/offer" className="category-link" style={{ display: 'flex', alignItems: 'center' }}>
+                      <span className="festival-name-golden" style={{ fontWeight: 600 }}>{activeFestival.name}</span>
+                    </Link>
+                  )}
                 </div>
 
                 {/* Mobile Menu Items */}
@@ -493,7 +498,7 @@ const Navbar = () => {
 
                   {/* Festival Link in Mobile Menu */}
                   {activeFestival && (
-                    <div style={{ padding: '1rem 0.5rem', borderTop: '1px solid #e2e8f0' }}>
+                    <Link to="/offer" onClick={() => setIsMobileMenuOpen(false)} style={{ display: 'block', padding: '1rem 0.5rem', borderTop: '1px solid #e2e8f0', textDecoration: 'none' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <Gift size={16} color="#d4af37" />
                         <span className="festival-name-golden" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{activeFestival.name}</span>
@@ -501,7 +506,7 @@ const Navbar = () => {
                       <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem', paddingLeft: '1.5rem' }}>
                         {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF
                       </div>
-                    </div>
+                    </Link>
                   )}
                 </div>
                 
@@ -708,13 +713,13 @@ const Navbar = () => {
           <div className="festival-notif-icon">
             <Gift size={28} color="#d4af37" />
           </div>
-          <div className="festival-notif-content">
-            <span className="festival-name-golden" style={{ fontSize: '1rem', fontWeight: 700 }}>{activeFestival.name}</span>
-            <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#475569', lineHeight: 1.4 }}>
+          <div className="festival-notif-content" style={{ fontFamily: "'Poppins', sans-serif" }}>
+            <span className="festival-name-golden" style={{ fontSize: '1.1rem', fontWeight: 700 }}>{activeFestival.name}</span>
+            <p style={{ margin: '0.35rem 0 0', fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.4 }}>
               Get <strong>{activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'}</strong> OFF on {activeFestival.applyTo === 'All Products' ? 'all products' : 'selected items'}!
             </p>
             {activeFestival.endDate && (
-              <p style={{ margin: '0.35rem 0 0', fontSize: '0.65rem', color: '#94a3b8' }}>
+              <p style={{ margin: '0.35rem 0 0', fontSize: '0.75rem', color: '#64748b' }}>
                 Ends: {new Date(`${activeFestival.endDate}T${activeFestival.endTime || '23:59'}`).toLocaleString()}
               </p>
             )}

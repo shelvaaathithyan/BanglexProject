@@ -5,12 +5,16 @@ export const isFestivalActive = (festival) => {
   const now = new Date();
   
   if (festival.startDate) {
-    const startDateTime = new Date(`${festival.startDate}T${festival.startTime || '00:00'}`);
+    const [year, month, day] = festival.startDate.split('-');
+    const [hours, minutes] = (festival.startTime || '00:00').split(':');
+    const startDateTime = new Date(year, month - 1, day, hours, minutes);
     if (now < startDateTime) return false;
   }
   
   if (festival.endDate) {
-    const endDateTime = new Date(`${festival.endDate}T${festival.endTime || '23:59'}`);
+    const [year, month, day] = festival.endDate.split('-');
+    const [hours, minutes] = (festival.endTime || '23:59').split(':');
+    const endDateTime = new Date(year, month - 1, day, hours, minutes);
     if (now > endDateTime) return false;
   }
   

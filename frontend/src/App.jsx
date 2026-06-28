@@ -5,6 +5,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import HomePage from './pages/HomePage';
 import CategoryPage from './pages/CategoryPage';
 import ProductDetailPage from './pages/ProductDetailPage';
+import FestivalOfferPage from './pages/FestivalOfferPage';
 import './index.css';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/home" element={<HomePage />} />
+        <Route path="/offer" element={<FestivalOfferPage />} />
         <Route path="/category/:categorySlug" element={<CategoryPage />} />
         <Route path="/product/:productId" element={<ProductDetailPage />} />
         <Route path="/login" element={<LoginSignup />} />

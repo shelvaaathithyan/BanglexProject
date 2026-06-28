@@ -78,6 +78,19 @@ router.post('/', upload.fields([{ name: 'desktopBanner', maxCount: 1 }, { name: 
   }
 });
 
+// Get the currently active festival with populated categories and products
+router.get('/active/populated', async (req, res) => {
+  try {
+    const activeFestival = await Festival.findOne({ isActive: true })
+      .populate('categories')
+      .populate('products');
+    res.json(activeFestival || null);
+  } catch (error) {
+    console.error('Error fetching populated active festival:', error);
+    res.status(500).json({ message: 'Error fetching active festival' });
+  }
+});
+
 // Get the currently active festival
 router.get('/active', async (req, res) => {
   try {

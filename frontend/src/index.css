@@ -4080,6 +4080,211 @@ body {
   .festival-side-notification {
     width: calc(100% - 2rem);
     right: 1rem;
-    bottom: 1rem;
   }
 }
+
+/* --- Festival Offer Page --- */
+.festival-offer-page {
+  background-color: #fffaf0; /* Warm subtle background for festivity */
+  min-height: 100vh;
+}
+
+.festival-main {
+  /* Removed padding-top to match home page flow */
+}
+
+.festival-banner-wrapper {
+  padding: 1rem 2rem;
+  width: 100%;
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.festival-banner-img {
+  width: 100%;
+  height: calc(100vh - 120px);
+  object-fit: cover;
+  object-position: center right;
+  display: block;
+  border-radius: 2rem;
+}
+
+.festival-banner-badge {
+  position: absolute;
+  top: 3rem;
+  right: 5rem;
+  background-color: #e11d48;
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  font-weight: bold;
+  font-size: 1.2rem;
+  z-index: 10;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.festival-section-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 3rem auto 1rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.festival-section-divider .divider-line {
+  height: 1px;
+  background-color: #d5b272;
+  flex: 1;
+  max-width: 100px;
+}
+
+.festival-section-divider .divider-icon {
+  color: #d5b272;
+  font-size: 1rem;
+  margin: 0 1rem;
+}
+
+.festival-section-divider .divider-title {
+  font-family: 'Georgia', serif;
+  font-size: 2rem;
+  color: #0e1f33;
+  font-weight: 600;
+}
+
+.festival-section-subtitle {
+  text-align: center;
+  color: #64748b;
+  font-size: 1rem;
+  margin-bottom: 3rem;
+}
+
+.offer-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 2rem;
+  padding: 0 2rem 4rem 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.offer-category-card {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  position: relative;
+  text-decoration: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.offer-category-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.offer-category-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: linear-gradient(135deg, #fef3c7, #fde68a);
+  color: #92400e;
+  border-radius: 8px 8px 8px 0;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+  z-index: 2;
+  border: 1px solid #fcd34d;
+}
+
+.offer-category-badge .badge-value {
+  font-weight: 900;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.offer-category-badge .badge-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.offer-category-img-wrapper {
+  width: 100%;
+  padding-top: 100%; /* 1:1 aspect ratio */
+  position: relative;
+  background-color: #f8fafc;
+}
+
+.offer-category-img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.offer-category-info {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  background: white;
+}
+
+.offer-category-name {
+  font-family: 'Poppins', sans-serif;
+  color: #0f172a;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.offer-category-desc {
+  color: #64748b;
+  font-size: 0.85rem;
+  margin-bottom: 1rem;
+  flex: 1;
+}
+
+.offer-category-link {
+  color: #e11d48;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: color 0.2s;
+}
+
+.offer-category-card:hover .offer-category-link {
+  color: #be123c;
+}
+
+@media (max-width: 768px) {
+  .festival-section-divider .divider-title {
+    font-size: 1.5rem;
+  }
+  .offer-category-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+    padding: 0 1rem 3rem 1rem;
+  }
+  .festival-banner-badge {
+    top: 1rem;
+    right: 1rem;
+    font-size: 1rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+

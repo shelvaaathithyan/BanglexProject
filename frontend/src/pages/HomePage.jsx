@@ -90,17 +90,7 @@ const HomePage = () => {
     fetchActiveFestival();
   }, []);
 
-  useEffect(() => {
-    let interval;
-    if (activeFestival && (activeFestival.desktopBannerUrl || activeFestival.mobileBannerUrl)) {
-      interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev === 0 ? 1 : 0));
-      }, 4000);
-    }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [activeFestival]);
+  // Festival banner logic has been moved to FestivalOfferPage
 
   const toggleLike = (e, product) => {
     e.preventDefault();
@@ -228,22 +218,10 @@ const HomePage = () => {
         <div 
           className="hero-container" 
           style={{ 
-            backgroundImage: `url(${
-              currentSlide === 1 && activeFestival 
-                ? (isMobile && activeFestival.mobileBannerUrl 
-                    ? activeFestival.mobileBannerUrl 
-                    : (activeFestival.desktopBannerUrl || activeFestival.mobileBannerUrl || '/hero-bg.png'))
-                : '/hero-bg.png'
-            })`,
-            transition: 'background-image 0.8s ease-in-out'
+            backgroundImage: `url('/hero-bg.png')`
           }}
         >
-          {currentSlide === 1 && activeFestival && activeFestival.showBadge && activeFestival.bannerText && (
-            <div style={{ position: 'absolute', top: '2rem', right: '3rem', backgroundColor: '#e11d48', color: 'white', padding: '0.5rem 1rem', borderRadius: '4px', fontWeight: 'bold', fontSize: '1.2rem', zIndex: 10, boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
-              {activeFestival.bannerText}
-            </div>
-          )}
-          <div className="hero-content" style={{ opacity: currentSlide === 1 ? 0 : 1, pointerEvents: currentSlide === 1 ? 'none' : 'auto', transition: 'opacity 0.8s ease-in-out' }}>
+          <div className="hero-content">
             <div className="hero-tag-wrapper">
               {/* Mandala Icon */}
               <svg className="hero-mandala" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cb8d71" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">
