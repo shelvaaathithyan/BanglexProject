@@ -1,10 +1,18 @@
-import React from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle2, Star, ShoppingBag, RotateCcw } from 'lucide-react';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { CheckCircle2, Star, RotateCcw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ResultCard = ({ result, onRetry }) => {
   const navigate = useNavigate();
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleReturnHome = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      navigate('/home');
+    }, 400);
+  };
 
   const renderStars = (stars) => {
     const elements = [];
@@ -97,14 +105,30 @@ const ResultCard = ({ result, onRetry }) => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5 }}
       >
-        <button className="sf-btn-primary sf-btn-shop-v4" onClick={() => navigate('/category/glass-bangles')}>
-          <ShoppingBag size={20} /> Shop Size {result.size}
+        <button className="sf-btn-primary sf-btn-shop-v4" onClick={handleReturnHome}>
+          Return to home
         </button>
         <button className="sf-btn-secondary sf-btn-retry-v4" onClick={onRetry}>
           <RotateCcw size={18} /> Scan Again
         </button>
       </motion.div>
       </div>
+
+      <AnimatePresence>
+        {isExiting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: '#FAFAFA', // Assuming var(--bg-color) is light
+              zIndex: 9999
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
