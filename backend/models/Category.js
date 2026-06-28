@@ -15,6 +15,10 @@ const CategorySchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  originalImageName: {
+    type: String,
+    default: ''
+  },
   status: {
     type: String,
     default: 'Active',

@@ -52,8 +52,10 @@ router.get('/', async (req, res) => {
 // @desc    Add a new category
 router.post('/', upload.single('image'), async (req, res) => {
   try {
-    const { name, description, status, group } = req.body;
+    const { name, description, status, group, originalImageName: bodyOriginalImageName } = req.body;
+    console.log('DEBUG req.file on POST:', req.file);
     const image = req.file ? req.file.path : '';
+    const originalImageName = bodyOriginalImageName || (req.file ? req.file.originalname : '');
     
     if (!name) {
       return res.status(400).json({ message: 'Category name is required' });
@@ -64,7 +66,7 @@ router.post('/', upload.single('image'), async (req, res) => {
       return res.status(400).json({ message: 'Category already exists' });
     }
 
-    const newCat = new Category({ name, description, status, group, image });
+    const newCat = new Category({ name, description, status, group, image, originalImageName });
     const savedCat = await newCat.save();
     
     res.status(201).json({ ...savedCat.toObject(), products: 0 });
@@ -100,7 +102,11 @@ router.put('/:id', upload.single('image'), async (req, res) => {
     if (description !== undefined) category.description = description;
     if (status !== undefined) category.status = status;
     if (group !== undefined) category.group = group;
-    if (req.file) category.image = req.file.path;
+    if (req.file) {
+      console.log('DEBUG req.file on PUT:', req.file);
+      category.image = req.file.path;
+      category.originalImageName = req.body.originalImageName || req.file.originalname;
+    }
 
     await category.save();
 

@@ -179,6 +179,8 @@ const AdminDashboard = () => {
     description: '',
     status: 'Active',
     group: 'Bangles',
+    existingImage: '',
+    existingImageName: '',
     imageFile: null
   });
 
@@ -371,6 +373,7 @@ const AdminDashboard = () => {
       formData.append('group', newCategoryForm.group);
       if (newCategoryForm.imageFile) {
         formData.append('image', newCategoryForm.imageFile);
+        formData.append('originalImageName', newCategoryForm.imageFile.name);
       }
 
       const res = await fetch(url, {
@@ -388,7 +391,7 @@ const AdminDashboard = () => {
         setIsCategoryModalOpen(false);
         setIsEditingCategory(false);
         setEditingCategoryId(null);
-        setNewCategoryForm({ name: '', description: '', status: 'Active', group: 'Bangles', imageFile: null });
+        setNewCategoryForm({ name: '', description: '', status: 'Active', group: 'Bangles', existingImage: '', existingImageName: '', imageFile: null });
       } else {
         const errorData = await res.json();
         alert(errorData.message || 'Failed to save category');
@@ -409,6 +412,8 @@ const AdminDashboard = () => {
       description: category.description || '',
       status: category.status || 'Active',
       group: category.group || 'Bangles',
+      existingImage: category.image || '',
+      existingImageName: category.originalImageName || (category.image ? category.image.split('/').pop() : ''),
       imageFile: null
     });
     setIsCategoryModalOpen(true);
@@ -1694,6 +1699,18 @@ const AdminDashboard = () => {
 
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Category Image {isEditingCategory ? '(Optional)' : '*'}</label>
+                
+                {isEditingCategory && newCategoryForm.existingImage && !newCategoryForm.imageFile && (
+                  <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#10b981', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <CheckCircle size={14} /> Keep Existing: {newCategoryForm.existingImageName || newCategoryForm.existingImage.split('/').pop()}
+                  </div>
+                )}
+                {newCategoryForm.imageFile && (
+                  <div style={{ marginBottom: '0.5rem', fontSize: '0.875rem', color: '#3b82f6', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <ImageIcon size={14} /> Selected: {newCategoryForm.imageFile.name}
+                  </div>
+                )}
+                
                 <input type="file" name="image" accept="image/*" onChange={handleCategoryFileChange} required={!isEditingCategory} style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} />
               </div>
 
