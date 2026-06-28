@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Plus, Minus, Star, Truck, Heart, ShoppingCart, Zap, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -25,6 +26,14 @@ const ProductDetailPage = () => {
   const [shareSuccess, setShareSuccess] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [activeFestival, setActiveFestival] = useState(null);
+  const [isExiting, setIsExiting] = useState(false);
+
+  const handleSizeFinderClick = () => {
+    setIsExiting(true);
+    setTimeout(() => {
+      navigate('/size-finder');
+    }, 400);
+  };
 
   // Fetch active festival
   useEffect(() => {
@@ -310,7 +319,17 @@ const ProductDetailPage = () => {
  
              {/* Size Selector */}
              <div className="selector-section">
-               <span className="selector-label"><strong>Size</strong> (Select your size)</span>
+               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                 <span className="selector-label" style={{ marginBottom: 0 }}><strong>Size</strong> (Select your size)</span>
+                 {product?.category?.toLowerCase().includes('bangle') && (
+                   <button 
+                     onClick={handleSizeFinderClick}
+                     className="btn-confused-shine"
+                   >
+                     Confused? Click me!!
+                   </button>
+                 )}
+               </div>
                <div className="size-options">
                  {sizes.map((size) => (
                    <button 
@@ -384,6 +403,22 @@ const ProductDetailPage = () => {
       )}
 
       <Footer />
+
+      <AnimatePresence>
+        {isExiting && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, ease: "easeInOut" }}
+            style={{
+              position: 'fixed',
+              inset: 0,
+              backgroundColor: '#FAFAFA',
+              zIndex: 9999
+            }}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 };
