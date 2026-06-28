@@ -35,6 +35,6 @@ export const analyzeMeasurements = (measurementBuffer) => {
     averageWidthNorm: average,
     medianWidthNorm: median,
     avgHandLengthNorm: avgHandLength,
-    isValid: Math.abs(average - median) < (average * 0.05) // Max 5% variance between mean and median
+    isValid: Math.abs(average - median) < (average * 0.15) // Relaxed to 15% variance to account for webcam jitter
   };
 };

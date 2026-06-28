@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import GlobalStepper from '../components/sizeFinder/GlobalStepper';
 import IntroStep from '../components/sizeFinder/IntroStep';
 import ModeStep from '../components/sizeFinder/ModeStep';
@@ -49,6 +50,10 @@ const SizeFinder = () => {
     if (currentStep === WIZARD_STEPS.RESULT) {
       return null; // Result step has its own buttons
     }
+    
+    if (currentStep === WIZARD_STEPS.INTRO) {
+      return null; // Intro step now has its own CTA button
+    }
 
     if (currentStep === WIZARD_STEPS.CAMERA) {
       return (
@@ -69,8 +74,7 @@ const SizeFinder = () => {
       <div className="sf-context-nav">
         <button 
           className="sf-btn-secondary" 
-          onClick={handlePrev} 
-          disabled={currentStep === WIZARD_STEPS.INTRO}
+          onClick={handlePrev}
         >
           Previous
         </button>
@@ -92,28 +96,38 @@ const SizeFinder = () => {
       <div className="sf-wizard-layout-v2">
         <GlobalStepper currentStepIndex={currentStep} />
 
-        <div className="sf-wizard-content-v2">
-          {currentStep === WIZARD_STEPS.INTRO && (
-            <IntroStep />
-          )}
+        <div className="sf-wizard-content-v4">
+          <AnimatePresence mode="wait">
+            {currentStep === WIZARD_STEPS.INTRO && (
+              <motion.div key="intro" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
+                <IntroStep onNext={handleNext} />
+              </motion.div>
+            )}
 
-          {currentStep === WIZARD_STEPS.MODE && (
-            <ModeStep onSelectMode={handleSelectMode} currentMode={localMode} />
-          )}
+            {currentStep === WIZARD_STEPS.MODE && (
+              <motion.div key="mode" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
+                <ModeStep onSelectMode={handleSelectMode} currentMode={localMode} />
+              </motion.div>
+            )}
 
-          {currentStep === WIZARD_STEPS.INSTRUCTIONS && (
-            <InstructionStep />
-          )}
+            {currentStep === WIZARD_STEPS.INSTRUCTIONS && (
+              <motion.div key="instructions" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.4 }}>
+                <InstructionStep />
+              </motion.div>
+            )}
 
-          {currentStep === WIZARD_STEPS.CAMERA && (
-            <div className="sf-step-container sf-camera-step-container">
-              <CameraScanner scannerHook={scannerHook} localMode={localMode} />
-            </div>
-          )}
+            {currentStep === WIZARD_STEPS.CAMERA && (
+              <motion.div key="camera" className="sf-step-container sf-camera-step-container" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }} transition={{ duration: 0.5 }}>
+                <CameraScanner scannerHook={scannerHook} localMode={localMode} />
+              </motion.div>
+            )}
 
-          {currentStep === WIZARD_STEPS.RESULT && (
-            <ResultCard result={scannerHook.result} onRetry={handleRetry} />
-          )}
+            {currentStep === WIZARD_STEPS.RESULT && (
+              <motion.div key="result" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} transition={{ duration: 0.6 }}>
+                <ResultCard result={scannerHook.result} onRetry={handleRetry} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {renderContextAwareNavigation()}

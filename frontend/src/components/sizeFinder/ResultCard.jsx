@@ -29,53 +29,83 @@ const ResultCard = ({ result, onRetry }) => {
   };
 
   return (
-    <motion.div 
-      className="sf-result-container-v3"
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4 }}
-    >
-      <div className="sf-result-header-v3">
-        <CheckCircle2 size={40} color="#10b981" />
-        <h2>Scan Complete</h2>
+    <div className="sf-result-container-v4">
+      <div className="sf-result-left-v4">
+        {/* Success Animation */}
+        <motion.div 
+          className="sf-success-anim-v4"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 200, damping: 15 }}
+        >
+          <CheckCircle2 size={56} color="#10b981" />
+        </motion.div>
+
+        <motion.h2 
+          className="sf-heading-acme sf-result-heading-v4"
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          Scan Complete
+        </motion.h2>
+
+        {/* Premium Recommendation Panel */}
+        <motion.div 
+          className="sf-recommendation-panel-v4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="sf-rp-glow"></div>
+          <span className="sf-rp-label">Recommended Size</span>
+          <div className="sf-rp-value">{result.size}</div>
+        </motion.div>
       </div>
 
-      <div className="sf-result-giant-size">
-        <span className="sf-size-label-v3">Recommended Size</span>
-        <div className="sf-size-value-v3">{result.size}</div>
-      </div>
+      <div className="sf-result-right-v4">
 
-      <div className="sf-result-summary-box">
-        <h3>Measurement Summary</h3>
-        <div className="sf-summary-grid">
-          <div className="sf-summary-item">
-            <span className="sf-summary-label">Diameter</span>
-            <span className="sf-summary-value">{result.innerDiameter} mm</span>
-          </div>
-          <div className="sf-summary-item">
-            <span className="sf-summary-label">Circumference</span>
-            <span className="sf-summary-value">{(result.innerDiameter * Math.PI).toFixed(1)} mm</span>
-          </div>
-          <div className="sf-summary-item">
-            <span className="sf-summary-label">Fit Type</span>
-            <span className="sf-summary-value">{result.fit || 'Comfort Fit'}</span>
-          </div>
-          <div className="sf-summary-item">
-            <span className="sf-summary-label">Recommendation</span>
-            <span className="sf-summary-value">Highly Accurate</span>
-          </div>
+      {/* Metric Grid (Apple Health Style) */}
+      <motion.div 
+        className="sf-metric-grid-v4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+      >
+        <div className="sf-metric-tile-v4">
+          <span className="sf-tile-label">Diameter</span>
+          <span className="sf-tile-value">{result.innerDiameter}<small>mm</small></span>
         </div>
-      </div>
+        <div className="sf-metric-tile-v4">
+          <span className="sf-tile-label">Circumference</span>
+          <span className="sf-tile-value">{(result.innerDiameter * Math.PI).toFixed(1)}<small>mm</small></span>
+        </div>
+        <div className="sf-metric-tile-v4">
+          <span className="sf-tile-label">Fit</span>
+          <span className="sf-tile-value">{result.fit || 'Comfort'}</span>
+        </div>
+        <div className="sf-metric-tile-v4">
+          <span className="sf-tile-label">Accuracy</span>
+          <span className="sf-tile-value">98<small>%</small></span>
+        </div>
+      </motion.div>
 
-      <div className="sf-result-actions-v3">
-        <button className="sf-btn-primary sf-btn-shop" onClick={() => navigate('/category/glass-bangles')}>
+      {/* CTA Buttons */}
+      <motion.div 
+        className="sf-result-actions-v4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <button className="sf-btn-primary sf-btn-shop-v4" onClick={() => navigate('/category/glass-bangles')}>
           <ShoppingBag size={20} /> Shop Size {result.size}
         </button>
-        <button className="sf-btn-secondary" onClick={onRetry}>
+        <button className="sf-btn-secondary sf-btn-retry-v4" onClick={onRetry}>
           <RotateCcw size={18} /> Scan Again
         </button>
+      </motion.div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

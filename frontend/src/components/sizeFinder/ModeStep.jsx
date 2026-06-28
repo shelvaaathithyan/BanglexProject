@@ -4,69 +4,43 @@ import { motion } from 'framer-motion';
 
 const ModeStep = ({ onSelectMode, currentMode }) => {
   return (
-    <motion.div 
-      className="sf-step-container sf-mode-v2"
-      initial={{ opacity: 0, scale: 0.98 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.4 }}
-    >
-      <div className="sf-mode-cards-horizontal">
+    <div className="sf-mode-v4">
+      <div className="sf-mode-cards-grid-v4">
         <div 
-          className={`sf-mode-card-v3 ${currentMode === 'QUICK' ? 'selected' : ''}`} 
+          className={`sf-mode-card-v4 ${currentMode === 'QUICK' ? 'selected' : ''}`} 
           onClick={() => onSelectMode('QUICK')}
         >
-          <div className="sf-mode-header-v3">
-            <div className="sf-mode-title-wrapper">
-              <Zap size={24} className="sf-mode-icon-v3" />
-              <h4>Quick Scan</h4>
-            </div>
+          <div className="sf-mode-card-header-v4">
+            <Zap size={28} className="sf-mode-card-icon-v4" />
+            <h2 className="sf-heading-acme sf-mode-title-v4">Quick Scan</h2>
+            <p className="sf-mode-desc-v4">Recommended for most users</p>
           </div>
-          <div className="sf-mode-body-v3">
-            <div className="sf-mode-metric">
-              <span className="sf-metric-label">Speed</span>
-              <span className="sf-metric-value">⚡ 15 Seconds</span>
-            </div>
-            <div className="sf-mode-metric">
-              <span className="sf-metric-label">Accuracy</span>
-              <span className="sf-metric-value">★★★★☆ Good</span>
-            </div>
-            <div className="sf-mode-metric">
-              <span className="sf-metric-label">Requirement</span>
-              <span className="sf-metric-value">No Card Needed</span>
-            </div>
-          </div>
-          <div className="sf-mode-footer-v3">Recommended for most users</div>
+          <ul className="sf-mode-features-v4">
+            <li><span className="sf-feature-label">Speed</span> ⚡ 15 Seconds</li>
+            <li><span className="sf-feature-label">Accuracy</span> ★★★★☆ Good</li>
+            <li><span className="sf-feature-label">Requirement</span> No Card Needed</li>
+          </ul>
         </div>
         
         <div 
-          className={`sf-mode-card-v3 highlight-v3 ${currentMode === 'HIGH_ACCURACY' ? 'selected' : ''}`} 
+          className={`sf-mode-card-v4 highlight-v4 ${currentMode === 'HIGH_ACCURACY' ? 'selected' : ''}`} 
           onClick={() => onSelectMode('HIGH_ACCURACY')}
         >
-          <div className="sf-recommended-badge-v3">Highest Precision</div>
-          <div className="sf-mode-header-v3">
-            <div className="sf-mode-title-wrapper">
-              <Target size={24} className="sf-mode-icon-v3" />
-              <h4>Precision Scan</h4>
-            </div>
+          {currentMode === 'HIGH_ACCURACY' && <div className="sf-mode-glow-v4"></div>}
+          <div className="sf-recommended-badge-v4">Highest Precision</div>
+          <div className="sf-mode-card-header-v4">
+            <Target size={28} className="sf-mode-card-icon-v4" />
+            <h2 className="sf-heading-acme sf-mode-title-v4">Precision Scan</h2>
+            <p className="sf-mode-desc-v4">For professional measurement</p>
           </div>
-          <div className="sf-mode-body-v3">
-            <div className="sf-mode-metric">
-              <span className="sf-metric-label">Speed</span>
-              <span className="sf-metric-value">⚡ 30 Seconds</span>
-            </div>
-            <div className="sf-mode-metric">
-              <span className="sf-metric-label">Accuracy</span>
-              <span className="sf-metric-value">★★★★★ Perfect</span>
-            </div>
-            <div className="sf-mode-metric">
-              <span className="sf-metric-label">Requirement</span>
-              <span className="sf-metric-value">Debit/Credit Card</span>
-            </div>
-          </div>
-          <div className="sf-mode-footer-v3">For professional measurement</div>
+          <ul className="sf-mode-features-v4">
+            <li><span className="sf-feature-label">Speed</span> ⚡ 30 Seconds</li>
+            <li><span className="sf-feature-label">Accuracy</span> ★★★★★ Perfect</li>
+            <li><span className="sf-feature-label">Requirement</span> Debit/Credit Card</li>
+          </ul>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 };
 

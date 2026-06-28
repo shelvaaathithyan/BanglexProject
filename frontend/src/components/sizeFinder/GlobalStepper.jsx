@@ -43,7 +43,7 @@ const GlobalStepper = ({ currentStepIndex }) => {
                         animate={{ scale: 1 }} 
                         transition={{ duration: 0.3, ease: "easeInOut" }}
                       >
-                        <Check size={20} className="sf-check-icon-v3" />
+                        <Check size={16} className="sf-check-icon-v3" />
                       </motion.div>
                     )}
                     {isActive && (
@@ -83,7 +83,7 @@ const GlobalStepper = ({ currentStepIndex }) => {
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
             <div className="sf-step-title-text-v3">Step {currentStepIndex + 1}</div>
-            <h2 className="sf-step-main-title-v3">{currentStepData.title}</h2>
+            <h2 className="sf-step-main-title-v3 sf-heading-acme">{currentStepData.title}</h2>
             <p className="sf-step-subtitle-v3">{currentStepData.subtitle}</p>
           </motion.div>
         </AnimatePresence>

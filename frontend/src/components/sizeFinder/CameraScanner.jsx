@@ -57,6 +57,11 @@ const CameraScanner = ({ scannerHook, localMode }) => {
       const t3 = setTimeout(() => setProcessingStep(3), 3000);
       
       return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    } else {
+      if (videoRef.current && videoRef.current.paused) {
+        videoRef.current.play().catch(e => console.error("Could not resume video:", e));
+      }
+      setProcessingStep(0);
     }
   }, [phase, videoRef]);
 
@@ -75,7 +80,7 @@ const CameraScanner = ({ scannerHook, localMode }) => {
     return '#ef4444'; // red
   };
 
-  const MetricItem = ({ title, score, goodMsg, warnMsg }) => {
+  const FloatingMetric = ({ title, score, goodMsg, warnMsg, position }) => {
     let status = 'error';
     if (score >= 80) status = 'good';
     else if (score >= 50) status = 'warning';
@@ -84,37 +89,28 @@ const CameraScanner = ({ scannerHook, localMode }) => {
     if (status === 'good') msg = goodMsg;
 
     return (
-      <div className="sf-metric-v2">
-        <div className="sf-metric-header">
-          <span className="sf-metric-title">{title}</span>
-          <div className="sf-metric-status">
-            {status === 'good' && <CheckCircle2 size={12} color="#10b981" />}
-            {status === 'warning' && <AlertTriangle size={12} color="#f59e0b" />}
-            {status === 'error' && <XCircle size={12} color="#ef4444" />}
-            <span style={{ color: getMetricColor(score) }}>{msg}</span>
-          </div>
+      <div className={`sf-floating-metric-card ${position}`}>
+        <div className="sf-fmc-icon">
+          {status === 'good' && <CheckCircle2 size={14} color="#10b981" />}
+          {status === 'warning' && <AlertTriangle size={14} color="#f59e0b" />}
+          {status === 'error' && <XCircle size={14} color="#ef4444" />}
         </div>
-        <div className="sf-metric-bar-bg">
-          <div 
-            className="sf-metric-bar-fill" 
-            style={{ 
-              width: getMetricProgressWidth(score),
-              backgroundColor: getMetricColor(score)
-            }} 
-          />
+        <div className="sf-fmc-content">
+          <span className="sf-fmc-title">{title}</span>
+          <span className="sf-fmc-status" style={{ color: getMetricColor(score) }}>{msg}</span>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="sf-camera-container-v3">
+    <div className="sf-camera-container-v4">
       
-      {/* 90% Width Camera Viewport */}
-      <div className="sf-video-wrapper-v3">
+      {/* 85% Width Camera Viewport */}
+      <div className="sf-video-wrapper-v4">
         <video 
           ref={videoRef} 
-          className="sf-video-element-v3" 
+          className="sf-video-element-v4" 
           playsInline 
           autoPlay 
           muted 
@@ -133,6 +129,8 @@ const CameraScanner = ({ scannerHook, localMode }) => {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
             >
+               {/* Minimal Glowing Guide */}
+               <div className="sf-glowing-scan-frame" />
                <div className="sf-hud-bracket top-left" />
                <div className="sf-hud-bracket top-right" />
                <div className="sf-hud-bracket bottom-left" />
@@ -143,21 +141,46 @@ const CameraScanner = ({ scannerHook, localMode }) => {
                  <div className="sf-scan-pulse-line" />
                )}
 
-               <div className="sf-hud-top-bar">
-                 <div className="sf-hud-status">
-                   <div className="sf-pulse-dot-v3" /> 
-                   {phase === SCAN_PHASES.COLLECTING ? "Scanning" : "Searching"}
-                 </div>
-                 <div className="sf-hud-confidence">
-                   {Math.round(confidence.overall)}% Match
+               {/* Top Left Status */}
+               <div className="sf-top-left-status">
+                 <div className="sf-pulse-dot-v3" /> 
+                 <div className="sf-tl-status-text">
+                   <span className="sf-tl-primary">{phase === SCAN_PHASES.COLLECTING ? "Scanning..." : "Searching"}</span>
+                   <span className="sf-tl-secondary">{phase === SCAN_PHASES.COLLECTING ? "Hold Steady" : "Looking for Hand"}</span>
                  </div>
                </div>
 
-               {errorMsg && (
-                 <div className="sf-instruction-pill-v3">
-                   <Info size={16} /> {errorMsg}
+               {/* Top Right Confidence */}
+               <div className="sf-top-right-confidence">
+                 <svg className="sf-conf-ring" viewBox="0 0 36 36">
+                   <path
+                     className="sf-conf-ring-bg"
+                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                   />
+                   <path
+                     className="sf-conf-ring-fill"
+                     strokeDasharray={`${Math.round(confidence.overall)}, 100`}
+                     d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                   />
+                 </svg>
+                 <div className="sf-conf-value">
+                   <span className="sf-conf-num">{Math.round(confidence.overall)}%</span>
+                   <span className="sf-conf-lbl">Confidence</span>
                  </div>
-               )}
+               </div>
+
+               {/* Center Instruction Pill */}
+               <div className="sf-instruction-pill-v4">
+                 {errorMsg ? errorMsg : "Place your palm inside the guide"}
+               </div>
+
+               {/* Floating Status Cards */}
+               <div className="sf-floating-metrics-container">
+                 <FloatingMetric title="Hand Position" score={confidence.pose} goodMsg="Ready" warnMsg="Fold Thumb" position="pos-1" />
+                 <FloatingMetric title="Lighting" score={confidence.lighting} goodMsg="Excellent" warnMsg="Adjust Light" position="pos-2" />
+                 <FloatingMetric title="Visibility" score={confidence.visibility} goodMsg="Good" warnMsg="Show Hand" position="pos-3" />
+                 <FloatingMetric title="Stability" score={confidence.stability} goodMsg="Stable" warnMsg="Hold Steady" position="pos-4" />
+               </div>
             </motion.div>
           )}
 
@@ -192,18 +215,22 @@ const CameraScanner = ({ scannerHook, localMode }) => {
                 </div>
                 <h3>Analyzing Hand Data</h3>
                 
-                <div className="sf-timeline-v3">
-                  <div className={`sf-tl-step ${processingStep >= 0 ? 'active' : ''}`}>
-                    <div className="sf-tl-dot" /> Detecting landmarks
+                <div className="sf-timeline-v4">
+                  <div className={`sf-tl-step-v4 ${processingStep >= 0 ? 'active' : ''}`}>
+                    <div className="sf-tl-dot-v4" /> 
+                    <span className="sf-tl-text-v4">Detecting</span>
                   </div>
-                  <div className={`sf-tl-step ${processingStep >= 1 ? 'active' : ''}`}>
-                    <div className="sf-tl-dot" /> Measuring palm geometry
+                  <div className={`sf-tl-step-v4 ${processingStep >= 1 ? 'active' : ''}`}>
+                    <div className="sf-tl-dot-v4" /> 
+                    <span className="sf-tl-text-v4">Calibrating</span>
                   </div>
-                  <div className={`sf-tl-step ${processingStep >= 2 ? 'active' : ''}`}>
-                    <div className="sf-tl-dot" /> Calculating scale ratio
+                  <div className={`sf-tl-step-v4 ${processingStep >= 2 ? 'active' : ''}`}>
+                    <div className="sf-tl-dot-v4" /> 
+                    <span className="sf-tl-text-v4">Measuring</span>
                   </div>
-                  <div className={`sf-tl-step ${processingStep >= 3 ? 'active' : ''}`}>
-                    <div className="sf-tl-dot" /> Matching RaHa database
+                  <div className={`sf-tl-step-v4 ${processingStep >= 3 ? 'active' : ''}`}>
+                    <div className="sf-tl-dot-v4" /> 
+                    <span className="sf-tl-text-v4">Generating Result</span>
                   </div>
                 </div>
                 <div className="sf-proc-time">
@@ -259,15 +286,7 @@ const CameraScanner = ({ scannerHook, localMode }) => {
         </AnimatePresence>
       </div>
 
-      {/* Elegant Bottom Metrics Bar */}
-      {phase !== SCAN_PHASES.CALCULATING && phase !== SCAN_PHASES.CALIBRATING && phase !== SCAN_PHASES.SELECT_MODE && phase !== SCAN_PHASES.INITIALIZING && phase !== SCAN_PHASES.ERROR && (
-        <div className="sf-metrics-bar-v3">
-          <MetricItem title="Pose" score={confidence.pose} goodMsg="Excellent" warnMsg="Fold Thumb" />
-          <MetricItem title="Lighting" score={confidence.lighting} goodMsg="Good" warnMsg="Adjust Light" />
-          <MetricItem title="Stability" score={confidence.stability} goodMsg="Stable" warnMsg="Hold Steady" />
-          <MetricItem title="Visibility" score={confidence.visibility} goodMsg="Perfect" warnMsg="Show Hand" />
-        </div>
-      )}
+      {/* Removed old bottom metrics bar completely */}
 
     </div>
   );
