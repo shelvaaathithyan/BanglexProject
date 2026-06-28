@@ -290,16 +290,35 @@ body {
   background-color: #0f172a; /* Sleek dark header */
   color: #ffffff;
   text-align: center;
-  padding: 0.5rem 1rem;
+  padding: 0.5rem 0;
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 1.5px;
   text-transform: uppercase;
+  overflow: hidden;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .top-banner p {
   margin: 0;
 }
+
+@keyframes scrollText {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+.marquee-content {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: scrollText 30s linear infinite;
+  gap: 3rem;
+  padding-right: 3rem;
+}
+
 
 .store-navbar {
   max-width: 1400px;

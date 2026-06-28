@@ -182,6 +182,9 @@ const AdminDashboard = () => {
   });
 
   const [isAddingFestival, setIsAddingFestival] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [festivalToDelete, setFestivalToDelete] = useState(null);
+  const [deleteConfirmationText, setDeleteConfirmationText] = useState('');
   const [newFestivalForm, setNewFestivalForm] = useState({
     name: '',
     description: '',
@@ -512,12 +515,20 @@ const AdminDashboard = () => {
     fetchFestivals();
   }, []);
 
-  const handleDeleteFestival = async (festivalId) => {
-    if (!window.confirm("Are you sure you want to delete this festival?")) return;
+  const promptDeleteFestival = (festival) => {
+    setFestivalToDelete(festival);
+    setDeleteConfirmationText('');
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDeleteFestival = async () => {
+    if (!festivalToDelete || deleteConfirmationText !== festivalToDelete.name) return;
     try {
-      const res = await fetch(`${API_BASE}/festivals/${festivalId}`, { method: 'DELETE' });
+      const res = await fetch(`${API_BASE}/festivals/${festivalToDelete._id}`, { method: 'DELETE' });
       if (res.ok) {
-        setAllFestivals(prev => prev.filter(f => f._id !== festivalId));
+        setAllFestivals(prev => prev.filter(f => f._id !== festivalToDelete._id));
+        setIsDeleteModalOpen(false);
+        setFestivalToDelete(null);
       } else {
         alert("Failed to delete festival.");
       }
@@ -1257,9 +1268,18 @@ const AdminDashboard = () => {
                         </td>
                         <td>
                           <div style={{ display: 'flex', justifyContent: 'center', gap: '0.75rem' }}>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><Edit size={16} /></button>
-                            <button style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8' }}><Eye size={16} /></button>
-                            <button onClick={() => handleDeleteFestival(fest._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                            <button 
+                              disabled={status === 'Completed' || status === 'On-Going'}
+                              style={{ 
+                                background: 'none', 
+                                border: 'none', 
+                                cursor: (status === 'Completed' || status === 'On-Going') ? 'not-allowed' : 'pointer', 
+                                color: (status === 'Completed' || status === 'On-Going') ? '#cbd5e1' : '#94a3b8' 
+                              }}
+                            >
+                              <Edit size={16} />
+                            </button>
+                            <button onClick={() => promptDeleteFestival(fest)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
                           </div>
                         </td>
                       </tr>
@@ -1583,6 +1603,56 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100, backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '400px', padding: '2rem', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', color: '#ef4444', marginBottom: '1rem' }}>
+              <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#fee2e2', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Trash2 size={24} />
+              </div>
+              <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: '#0f172a', margin: 0 }}>Delete Offer</h3>
+            </div>
+            
+            <p style={{ color: '#475569', fontSize: '0.875rem', marginBottom: '1.5rem', lineHeight: '1.5' }}>
+              This action cannot be undone. To permanently delete this offer, please type <strong style={{ color: '#0f172a' }}>{festivalToDelete?.name}</strong> below to confirm.
+            </p>
+
+            <input 
+              type="text" 
+              value={deleteConfirmationText}
+              onChange={(e) => setDeleteConfirmationText(e.target.value)}
+              placeholder={festivalToDelete?.name}
+              style={{ width: '100%', padding: '0.75rem 1rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem', outline: 'none', marginBottom: '1.5rem' }}
+            />
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+              <button 
+                onClick={() => { setIsDeleteModalOpen(false); setFestivalToDelete(null); }} 
+                style={{ padding: '0.75rem 1.5rem', borderRadius: '8px', border: '1px solid #cbd5e1', background: 'white', color: '#64748b', fontWeight: 600, cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={confirmDeleteFestival} 
+                disabled={deleteConfirmationText !== festivalToDelete?.name}
+                style={{ 
+                  padding: '0.75rem 1.5rem', 
+                  borderRadius: '8px', 
+                  border: 'none', 
+                  background: deleteConfirmationText === festivalToDelete?.name ? '#ef4444' : '#fca5a5', 
+                  color: 'white', 
+                  fontWeight: 600, 
+                  cursor: deleteConfirmationText === festivalToDelete?.name ? 'pointer' : 'not-allowed' 
+                }}
+              >
+                Delete Offer
+              </button>
+            </div>
           </div>
         </div>
       )}

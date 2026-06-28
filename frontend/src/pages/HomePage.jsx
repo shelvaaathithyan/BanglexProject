@@ -95,7 +95,7 @@ const HomePage = () => {
     if (activeFestival && (activeFestival.desktopBannerUrl || activeFestival.mobileBannerUrl)) {
       interval = setInterval(() => {
         setCurrentSlide((prev) => (prev === 0 ? 1 : 0));
-      }, 2000);
+      }, 4000);
     }
     return () => {
       if (interval) clearInterval(interval);
@@ -235,7 +235,7 @@ const HomePage = () => {
                     : (activeFestival.desktopBannerUrl || activeFestival.mobileBannerUrl || '/hero-bg.png'))
                 : '/hero-bg.png'
             })`,
-            transition: 'background-image 0.5s ease-in-out'
+            transition: 'background-image 0.8s ease-in-out'
           }}
         >
           {currentSlide === 1 && activeFestival && activeFestival.showBadge && activeFestival.bannerText && (
@@ -243,7 +243,7 @@ const HomePage = () => {
               {activeFestival.bannerText}
             </div>
           )}
-          <div className="hero-content">
+          <div className="hero-content" style={{ opacity: currentSlide === 1 ? 0 : 1, pointerEvents: currentSlide === 1 ? 'none' : 'auto', transition: 'opacity 0.8s ease-in-out' }}>
             <div className="hero-tag-wrapper">
               {/* Mandala Icon */}
               <svg className="hero-mandala" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#cb8d71" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round">

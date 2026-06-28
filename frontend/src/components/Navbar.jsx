@@ -282,11 +282,14 @@ const Navbar = () => {
         {/* Top Banner */}
         <div className="top-banner">
           {activeFestival ? (
-            <p>
-              <Sparkles size={14} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
-              <span className="festival-name-golden">{activeFestival.name}</span>
-              {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage' ? '%' : '₹'} OFF!
-            </p>
+            <div className="marquee-content" style={{ display: 'flex', width: 'max-content' }}>
+              {[...Array(12)].map((_, i) => (
+                <span key={i} style={{ paddingRight: '3rem' }}>
+                  <span className="festival-name-golden">{activeFestival.name}</span>
+                  {' '} — {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF!
+                </span>
+              ))}
+            </div>
           ) : (
             <p>🚚 FREE SHIPPING ON ALL ORDERS ABOVE ₹999!</p>
           )}
@@ -496,7 +499,7 @@ const Navbar = () => {
                         <span className="festival-name-golden" style={{ fontSize: '0.85rem', fontWeight: 700 }}>{activeFestival.name}</span>
                       </div>
                       <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '0.25rem', paddingLeft: '1.5rem' }}>
-                        {activeFestival.discountValue}{activeFestival.discountType === 'Percentage' ? '%' : '₹'} OFF
+                        {activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'} OFF
                       </div>
                     </div>
                   )}
@@ -708,7 +711,7 @@ const Navbar = () => {
           <div className="festival-notif-content">
             <span className="festival-name-golden" style={{ fontSize: '1rem', fontWeight: 700 }}>{activeFestival.name}</span>
             <p style={{ margin: '0.25rem 0 0', fontSize: '0.8rem', color: '#475569', lineHeight: 1.4 }}>
-              Get <strong>{activeFestival.discountValue}{activeFestival.discountType === 'Percentage' ? '%' : '₹'}</strong> OFF on {activeFestival.applyTo === 'All Products' ? 'all products' : 'selected items'}!
+              Get <strong>{activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'}</strong> OFF on {activeFestival.applyTo === 'All Products' ? 'all products' : 'selected items'}!
             </p>
             {activeFestival.endDate && (
               <p style={{ margin: '0.35rem 0 0', fontSize: '0.65rem', color: '#94a3b8' }}>

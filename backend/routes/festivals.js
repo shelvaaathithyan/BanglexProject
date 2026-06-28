@@ -103,10 +103,37 @@ router.get('/', async (req, res) => {
 // Delete a festival
 router.delete('/:id', async (req, res) => {
   try {
-    const deletedFestival = await Festival.findByIdAndDelete(req.params.id);
-    if (!deletedFestival) {
+    const festival = await Festival.findById(req.params.id);
+    if (!festival) {
       return res.status(404).json({ message: 'Festival not found' });
     }
+
+    // Helper to extract public_id from Cloudinary URL
+    const extractPublicId = (url) => {
+      if (!url) return null;
+      const matches = url.match(/\/upload\/(?:v\d+\/)?([^\.]+)/);
+      return matches ? matches[1] : null;
+    };
+
+    const desktopPublicId = extractPublicId(festival.desktopBannerUrl);
+    if (desktopPublicId) {
+      try {
+        await cloudinary.uploader.destroy(desktopPublicId);
+      } catch (err) {
+        console.error('Error deleting desktop banner from cloudinary:', err);
+      }
+    }
+
+    const mobilePublicId = extractPublicId(festival.mobileBannerUrl);
+    if (mobilePublicId) {
+      try {
+        await cloudinary.uploader.destroy(mobilePublicId);
+      } catch (err) {
+        console.error('Error deleting mobile banner from cloudinary:', err);
+      }
+    }
+
+    await Festival.findByIdAndDelete(req.params.id);
     res.json({ message: 'Festival deleted successfully' });
   } catch (error) {
     console.error('Error deleting festival:', error);
