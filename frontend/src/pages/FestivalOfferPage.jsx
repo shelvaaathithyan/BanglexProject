@@ -310,7 +310,7 @@ const FestivalOfferPage = () => {
                   </div>
                   <div className="offer-category-img-wrapper">
                     <img 
-                      src={cat.imageUrl || 'https://via.placeholder.com/300'} 
+                      src={cat.image || 'https://via.placeholder.com/300'} 
                       alt={cat.name} 
                       className="offer-category-img"
                     />

@@ -178,7 +178,8 @@ const AdminDashboard = () => {
     name: '',
     description: '',
     status: 'Active',
-    group: 'Bangles'
+    group: 'Bangles',
+    imageFile: null
   });
 
   const [isAddingFestival, setIsAddingFestival] = useState(false);
@@ -291,6 +292,10 @@ const AdminDashboard = () => {
     setNewCategoryForm(prev => ({ ...prev, [name]: value }));
   };
 
+  const handleCategoryFileChange = (e) => {
+    setNewCategoryForm(prev => ({ ...prev, imageFile: e.target.files[0] }));
+  };
+
   const handleAddCategorySubmit = async (e) => {
     e.preventDefault();
     if (!newCategoryForm.name) {
@@ -303,10 +308,18 @@ const AdminDashboard = () => {
       const url = isEditingCategory ? `${API_BASE}/categories/${editingCategoryId}` : `${API_BASE}/categories`;
       const method = isEditingCategory ? 'PUT' : 'POST';
 
+      const formData = new FormData();
+      formData.append('name', newCategoryForm.name);
+      formData.append('description', newCategoryForm.description);
+      formData.append('status', newCategoryForm.status);
+      formData.append('group', newCategoryForm.group);
+      if (newCategoryForm.imageFile) {
+        formData.append('image', newCategoryForm.imageFile);
+      }
+
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newCategoryForm)
+        body: formData
       });
 
       if (res.ok) {
@@ -319,7 +332,7 @@ const AdminDashboard = () => {
         setIsCategoryModalOpen(false);
         setIsEditingCategory(false);
         setEditingCategoryId(null);
-        setNewCategoryForm({ name: '', description: '', status: 'Active', group: 'Bangles' });
+        setNewCategoryForm({ name: '', description: '', status: 'Active', group: 'Bangles', imageFile: null });
       } else {
         const errorData = await res.json();
         alert(errorData.message || 'Failed to save category');
@@ -339,7 +352,8 @@ const AdminDashboard = () => {
       name: category.name || '',
       description: category.description || '',
       status: category.status || 'Active',
-      group: category.group || 'Bangles'
+      group: category.group || 'Bangles',
+      imageFile: null
     });
     setIsCategoryModalOpen(true);
   };
@@ -1577,6 +1591,11 @@ const AdminDashboard = () => {
               <div>
                 <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Description</label>
                 <textarea name="description" value={newCategoryForm.description} onChange={handleCategoryInputChange} rows="3" style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}></textarea>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem', fontWeight: 500, color: '#475569' }}>Category Image {isEditingCategory ? '(Optional)' : '*'}</label>
+                <input type="file" name="image" accept="image/*" onChange={handleCategoryFileChange} required={!isEditingCategory} style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }} />
               </div>
 
               <div>

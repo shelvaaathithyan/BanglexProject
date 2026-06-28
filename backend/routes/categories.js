@@ -1,7 +1,20 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const { cloudinary } = require('../config/cloudinary');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const Category = require('../models/Category');
 const Product = require('../models/Product');
+
+// Configure multer storage for categories
+const categoryStorage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'categories',
+    allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'avif', 'gif'],
+  },
+});
+const upload = multer({ storage: categoryStorage });
 
 // @route   GET /categories
 // @desc    Get all categories with product counts
@@ -37,9 +50,10 @@ router.get('/', async (req, res) => {
 
 // @route   POST /categories
 // @desc    Add a new category
-router.post('/', async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   try {
     const { name, description, status, group } = req.body;
+    const image = req.file ? req.file.path : '';
     
     if (!name) {
       return res.status(400).json({ message: 'Category name is required' });
@@ -50,7 +64,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'Category already exists' });
     }
 
-    const newCat = new Category({ name, description, status, group });
+    const newCat = new Category({ name, description, status, group, image });
     const savedCat = await newCat.save();
     
     res.status(201).json({ ...savedCat.toObject(), products: 0 });
@@ -62,7 +76,7 @@ router.post('/', async (req, res) => {
 
 // @route   PUT /categories/:id
 // @desc    Update a category
-router.put('/:id', async (req, res) => {
+router.put('/:id', upload.single('image'), async (req, res) => {
   try {
     const { name, description, status, group } = req.body;
     
@@ -86,6 +100,7 @@ router.put('/:id', async (req, res) => {
     if (description !== undefined) category.description = description;
     if (status !== undefined) category.status = status;
     if (group !== undefined) category.group = group;
+    if (req.file) category.image = req.file.path;
 
     await category.save();
 
