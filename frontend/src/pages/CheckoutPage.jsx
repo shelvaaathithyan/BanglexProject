@@ -91,6 +91,28 @@ const CheckoutPage = () => {
     window.scrollTo(0, 0);
   }, [navigate]);
 
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const token = localStorage.getItem('token');
+      if (token && user && user._id) {
+        fetch(`${API_BASE}/payments/clear-reservations`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ userId: user._id }),
+          keepalive: true
+        }).catch(() => {});
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [user]);
+
   const handleSelectSavedAddress = (selectedAddr) => {
     setAddress({ ...selectedAddr });
     setAddressType(selectedAddr.addressType || 'Home');

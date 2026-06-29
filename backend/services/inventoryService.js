@@ -49,7 +49,7 @@ class InventoryService {
       const multiR = redis.multi();
       for (const k of reservationKeys) {
         multiR.hGetAll(k);
-        multiR.pTtl(k);
+        multiR.pTTL(k);
       }
       const resvDetails = await multiR.exec();
       

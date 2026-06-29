@@ -1,6 +1,12 @@
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
+mongoose.plugin((schema) => {
+  schema.add({
+    isTestData: { type: Boolean, default: false },
+    testRunId: { type: String }
+  });
+});
 const cors = require('cors');
 const passport = require('passport');
 const bcrypt = require('bcrypt');
