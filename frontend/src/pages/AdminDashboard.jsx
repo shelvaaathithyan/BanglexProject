@@ -692,6 +692,36 @@ const AdminDashboard = () => {
 
   const uniqueProductCategories = ['All Categories', ...new Set(allCategories.map(c => c.name).filter(Boolean))];
 
+  const formatMessage = (msg) => {
+    if (!msg) return '';
+    // Remove (Retroactive) or (Retroactive):
+    let text = msg.replace(/\(Retroactive\)/g, '');
+    // Clean up double colons if any
+    text = text.replace(/:\s*:/g, ':');
+    // Move 'Current stock' to a new line dynamically
+    text = text.replace(/(\.|\b)\s*(Current stock:)/gi, '\n$2');
+    
+    const lines = text.split('\n');
+    return lines.map((line, idx) => {
+      // Remove leading dash/bullet if present
+      let cleanLine = line.replace(/^\s*-\s*/, '');
+      
+      // Match "Amount: <value>" or "Current stock: <value>"
+      const regex = /(Amount:\s*[^\s]+|Current stock:\s*[^\s]+)/i;
+      const parts = cleanLine.split(regex);
+      return (
+        <div key={idx} style={{ minHeight: '1.2em' }}>
+          {parts.map((part, pidx) => {
+            if (regex.test(part)) {
+              return <strong key={pidx} style={{ color: '#1e293b', fontWeight: 'bold' }}>{part}</strong>;
+            }
+            return part;
+          })}
+        </div>
+      );
+    });
+  };
+
   return (
     <div className="admin-layout">
       {/* Sidebar */}
@@ -799,7 +829,7 @@ const AdminDashboard = () => {
                     notifications.map(n => (
                       <div key={n._id} style={{ padding: '1rem', borderBottom: '1px solid #e2e8f0', background: n.read ? 'white' : '#f8fafc' }}>
                         <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{n.title}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>{n.message}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem' }}>{formatMessage(n.message)}</div>
                         <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.5rem' }}>{new Date(n.createdAt).toLocaleString()}</div>
                       </div>
                     ))

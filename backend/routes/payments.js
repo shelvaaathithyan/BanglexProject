@@ -274,7 +274,7 @@ router.post('/verify', async (req, res) => {
         { session, new: true }
       );
       if (updatedProduct) {
-        notificationMsg += `- ${updatedProduct.name}: Decreased by ${item.quantity}. Current stock: ${updatedProduct.stock}\n`;
+        notificationMsg += `${updatedProduct.name}: Decreased by ${item.quantity}.\nCurrent stock: ${updatedProduct.stock}\n`;
       }
     }
     
