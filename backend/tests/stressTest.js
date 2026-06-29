@@ -308,13 +308,24 @@ async function runTests() {
   } catch (error) {
     console.error("Test Suite crashed:", error);
   } finally {
-    console.log('\n--- TEARDOWN ---');
+    console.log('\\n--- TEARDOWN ---');
     
-    const ordersDeleted = await Order.deleteMany({ testRunId });
+    // Robust cleanup: Delete everything related to test users, even if the testRunId flag wasn't added due to a crash
+    const usersToDelete = await User.find({ testRunId });
+    const testUserIds = usersToDelete.map(u => u._id);
+    const testOrders = await Order.find({ $or: [{ user: { $in: testUserIds } }, { testRunId }] });
+    const testOrderIds = testOrders.map(o => o._id);
+
+    await Invoice.deleteMany({ $or: [{ order: { $in: testOrderIds } }, { testRunId }] });
+    await Payment.deleteMany({ $or: [{ user: { $in: testUserIds } }, { order: { $in: testOrderIds } }, { testRunId }] });
+    const ordersDeleted = await Order.deleteMany({ _id: { $in: testOrderIds } });
+    
+    let Notification;
+    try { Notification = require('../models/Notification'); } catch(e) {}
+    if (Notification) await Notification.deleteMany({ user: { $in: testUserIds } });
+
     const productsDeleted = await Product.deleteMany({ testRunId });
     const usersDeleted = await User.deleteMany({ testRunId });
-    await Payment.deleteMany({ testRunId });
-    await Invoice.deleteMany({ testRunId });
     
     console.log(`Deleted ${ordersDeleted.deletedCount} orders, ${productsDeleted.deletedCount} products, ${usersDeleted.deletedCount} users.`);
     
@@ -330,8 +341,39 @@ async function runTests() {
       await redis.del(`product:reservations:${p._id}`);
     }
     
-    console.log('Teardown complete. Zero test data left behind.');
-    process.exit(0);
+    console.log('Teardown complete. Verifying cleanup...');
+    
+    // VERIFICATION
+    const leftoverUsers = await User.countDocuments({ testRunId });
+    const leftoverProducts = await Product.countDocuments({ testRunId });
+    const leftoverOrders = await Order.countDocuments({ $or: [{ user: { $in: testUserIds } }, { testRunId }] });
+    const leftoverPayments = await Payment.countDocuments({ $or: [{ user: { $in: testUserIds } }, { testRunId }] });
+    const leftoverInvoices = await Invoice.countDocuments({ $or: [{ order: { $in: testOrderIds } }, { testRunId }] });
+    
+    let leftoverRedis = 0;
+    for (const p of testProducts) {
+      if (!p) continue;
+      const r = await redis.get(`product:reserved:${p._id}`);
+      if (r !== null) leftoverRedis++;
+      const resv = await redis.sMembers(`product:reservations:${p._id}`);
+      if (resv && resv.length > 0) leftoverRedis++;
+    }
+
+    let cleanupFailed = false;
+    if (leftoverUsers > 0) { console.error(`❌ FAILED: ${leftoverUsers} test users remaining`); cleanupFailed = true; }
+    if (leftoverProducts > 0) { console.error(`❌ FAILED: ${leftoverProducts} test products remaining`); cleanupFailed = true; }
+    if (leftoverOrders > 0) { console.error(`❌ FAILED: ${leftoverOrders} test orders remaining`); cleanupFailed = true; }
+    if (leftoverPayments > 0) { console.error(`❌ FAILED: ${leftoverPayments} test payments remaining`); cleanupFailed = true; }
+    if (leftoverInvoices > 0) { console.error(`❌ FAILED: ${leftoverInvoices} test invoices remaining`); cleanupFailed = true; }
+    if (leftoverRedis > 0) { console.error(`❌ FAILED: ${leftoverRedis} test redis keys remaining`); cleanupFailed = true; }
+
+    if (cleanupFailed) {
+      console.error('❌ CLEANUP VERIFICATION FAILED. Residual test data remains in the database.');
+      process.exit(1);
+    } else {
+      console.log('✅ CLEANUP VERIFICATION PASSED. Zero test data left behind.');
+      process.exit(0);
+    }
   }
 }
 
