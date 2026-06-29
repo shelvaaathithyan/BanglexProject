@@ -1179,30 +1179,30 @@ const AdminDashboard = () => {
                       <tr><td colSpan="6" style={{ textAlign: 'center', color: '#94a3b8', padding: '3rem 0' }}>No products found matching your search.</td></tr>
                     ) : (
                       filteredProducts.map((product, idx) => (
-                      <tr key={idx}>
+                      <tr key={idx} style={{ opacity: product.stock === 0 ? 0.8 : 1 }}>
                         <td>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <img src={product.images[0]} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover' }} />
+                            <img src={product.images[0]} alt={product.name} style={{ width: '40px', height: '40px', borderRadius: '8px', objectFit: 'cover', filter: product.stock === 0 ? 'grayscale(100%)' : 'none' }} />
                             <div>
-                              <div style={{ fontWeight: 500, color: '#0f172a' }}>{product.name}</div>
+                              <div style={{ fontWeight: 500, color: product.stock === 0 ? '#000000' : '#0f172a' }}>{product.name}</div>
                               <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{product._id}</div>
                             </div>
                           </div>
                         </td>
-                        <td>{product.category}</td>
-                        <td style={{ fontWeight: 500 }}>₹{product.price}</td>
+                        <td style={{ color: product.stock === 0 ? '#000000' : 'inherit' }}>{product.category}</td>
+                        <td style={{ fontWeight: 500, color: product.stock === 0 ? '#000000' : 'inherit' }}>₹{product.price}</td>
                         <td>
-                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: product.stock > 15 ? '#dcfce7' : '#fef08a', color: product.stock > 15 ? '#16a34a' : '#a16207', fontWeight: 600 }}>
+                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: product.stock === 0 ? '#000000' : (product.stock > 15 ? '#dcfce7' : '#fef08a'), color: product.stock === 0 ? '#ffffff' : (product.stock > 15 ? '#16a34a' : '#a16207'), fontWeight: 600 }}>
                             {product.stock} in stock
                           </span>
                         </td>
                         <td>
-                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: '#dcfce7', color: '#16a34a', fontWeight: 600 }}>Active</span>
+                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: product.stock === 0 ? '#000000' : '#dcfce7', color: product.stock === 0 ? '#ffffff' : '#16a34a', fontWeight: 600 }}>Active</span>
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.5rem' }}>
-                            <button onClick={() => handleEditClick(product)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}><Edit size={16} /></button>
-                            <button onClick={() => handleDeleteProduct(product._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ef4444' }}><Trash2 size={16} /></button>
+                            <button onClick={() => handleEditClick(product)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: product.stock === 0 ? '#000000' : '#64748b' }}><Edit size={16} /></button>
+                            <button onClick={() => handleDeleteProduct(product._id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: product.stock === 0 ? '#000000' : '#ef4444' }}><Trash2 size={16} /></button>
                           </div>
                         </td>
                       </tr>

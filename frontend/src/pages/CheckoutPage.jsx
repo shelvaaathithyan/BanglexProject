@@ -92,6 +92,31 @@ const CheckoutPage = () => {
     setSaveAddress(false);
   };
 
+  const updateQuantity = (index, delta) => {
+    const updatedCart = [...cartItems];
+    const item = updatedCart[index];
+    const newQuantity = item.quantity + delta;
+
+    if (delta > 0 && item.stock !== undefined && newQuantity > item.stock) {
+       alert(`Only ${item.stock} units are available in stock.`);
+       return;
+    }
+
+    if (newQuantity <= 0) {
+      updatedCart.splice(index, 1);
+    } else {
+      updatedCart[index] = { ...item, quantity: newQuantity };
+    }
+
+    setCartItems(updatedCart);
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    window.dispatchEvent(new Event('cartUpdated'));
+
+    if (updatedCart.length === 0) {
+      navigate('/home');
+    }
+  };
+
   const calculateSubtotal = () => {
     return cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   };
@@ -496,11 +521,15 @@ const CheckoutPage = () => {
                   <div key={idx} className="summary-item">
                     <div className="summary-item-img">
                       <img src={item.image} alt={item.name} />
-                      <span className="item-qty-badge">{item.quantity}</span>
                     </div>
                     <div className="summary-item-info">
                       <span className="item-name">{item.name}</span>
                       <span className="item-variant">{item.size} | {item.color}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}>
+                        <button type="button" onClick={(e) => { e.preventDefault(); updateQuantity(idx, -1); }} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', width: '24px', height: '24px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#475569', fontWeight: 600, transition: 'all 0.2s' }} onMouseOver={(e)=>e.target.style.background='#e2e8f0'} onMouseOut={(e)=>e.target.style.background='#f1f5f9'}>-</button>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#1e293b', minWidth: '16px', textAlign: 'center' }}>{item.quantity}</span>
+                        <button type="button" onClick={(e) => { e.preventDefault(); updateQuantity(idx, 1); }} style={{ background: '#f1f5f9', border: '1px solid #e2e8f0', width: '24px', height: '24px', borderRadius: '4px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', color: '#475569', fontWeight: 600, transition: 'all 0.2s' }} onMouseOver={(e)=>e.target.style.background='#e2e8f0'} onMouseOut={(e)=>e.target.style.background='#f1f5f9'}>+</button>
+                      </div>
                     </div>
                     <span className="item-price">Rs. {(item.price * item.quantity).toFixed(2)}</span>
                   </div>
