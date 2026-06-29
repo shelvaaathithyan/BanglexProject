@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const Product = require('../models/Product');
-const { getRedisClient } = require('../config/redis');
+const { getRedisClient, getScriptShas } = require('../config/redis');
 
 class InventoryService {
   
@@ -14,10 +14,15 @@ class InventoryService {
     let totalStock = 0;
     
     // 2. Pipeline to get reserved stock for each product
+    const scriptShas = getScriptShas();
+    const nowStr = Date.now().toString();
     const multiP = redis.multi();
     for (const p of products) {
       totalStock += p.stock;
-      multiP.get(`product:reserved:${p._id.toString()}`);
+      multiP.evalSha(scriptShas.getReservedStock, {
+         keys: [`product:reserved_qty:${p._id.toString()}`, `product:reservations:${p._id.toString()}`],
+         arguments: [nowStr]
+      });
     }
     
     const reservedResults = await multiP.exec();
@@ -137,9 +142,14 @@ class InventoryService {
     const total = await Product.countDocuments(query);
     
     if (products.length > 0) {
+       const scriptShas = getScriptShas();
+       const nowStr = Date.now().toString();
        const multi = redis.multi();
        for (const p of products) {
-         multi.get(`product:reserved:${p._id.toString()}`);
+         multi.evalSha(scriptShas.getReservedStock, {
+           keys: [`product:reserved_qty:${p._id.toString()}`, `product:reservations:${p._id.toString()}`],
+           arguments: [nowStr]
+         });
        }
        const reservedData = await multi.exec();
        products.forEach((p, idx) => {
@@ -168,7 +178,13 @@ class InventoryService {
       throw new Error('Product not found');
     }
 
-    const reservedCount = parseInt(await redis.get(`product:reserved:${product._id.toString()}`) || 0, 10);
+    const scriptShas = getScriptShas();
+    const nowStr = Date.now().toString();
+    const reservedCountRes = await redis.evalSha(scriptShas.getReservedStock, {
+      keys: [`product:reserved_qty:${product._id.toString()}`, `product:reservations:${product._id.toString()}`],
+      arguments: [nowStr]
+    });
+    const reservedCount = parseInt(reservedCountRes || 0, 10);
     
     if (newStock < reservedCount) {
       throw new Error(`Cannot lower stock below active reservations (${reservedCount})`);

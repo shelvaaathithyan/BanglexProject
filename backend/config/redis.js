@@ -19,10 +19,12 @@ const initRedis = async () => {
   try {
     const reserveScript = fs.readFileSync(path.join(__dirname, '../redis/reserveInventory.lua'), 'utf8');
     const releaseScript = fs.readFileSync(path.join(__dirname, '../redis/releaseReservation.lua'), 'utf8');
+    const getReservedStockScript = fs.readFileSync(path.join(__dirname, '../redis/getReservedStock.lua'), 'utf8');
 
     // Load scripts into Redis and get SHAs
     scriptShas.reserveInventory = await redisClient.scriptLoad(reserveScript);
     scriptShas.releaseReservation = await redisClient.scriptLoad(releaseScript);
+    scriptShas.getReservedStock = await redisClient.scriptLoad(getReservedStockScript);
     
     console.log('Lua Scripts Loaded successfully via SCRIPT LOAD.');
   } catch (err) {

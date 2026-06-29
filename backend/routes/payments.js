@@ -121,7 +121,7 @@ router.post('/create-order', async (req, res) => {
       }
       
       const reservationId = new mongoose.Types.ObjectId().toString();
-      const reservedKey = `product:reserved:${product._id}`;
+      const reservedKey = `product:reserved_qty:${product._id}`;
       const reservationKey = `reservation:${reservationId}`;
       const reservationsSetKey = `product:reservations:${product._id}`;
       const ttl = 600; // 10 minutes
@@ -225,7 +225,7 @@ router.post('/create-order', async (req, res) => {
         try {
           await redis.evalSha(scriptShas.releaseReservation, {
             keys: [
-              `product:reserved:${resv.productId}`,
+              `product:reserved_qty:${resv.productId}`,
               `reservation:${resv.reservationId}`,
               `product:reservations:${resv.productId}`
             ],
@@ -395,10 +395,12 @@ router.post('/verify', async (req, res) => {
         const item = order.items[i];
         if (item) {
           try {
+            const reservedKey = `product:reserved_qty:${item.product}`;
+            const reservationKey = `reservation:${resvId}`;
             await redis.evalSha(scriptShas.releaseReservation, {
               keys: [
-                `product:reserved:${item.product}`,
-                `reservation:${resvId}`,
+                reservedKey,
+                reservationKey,
                 `product:reservations:${item.product}`
               ],
               arguments: [resvId]
@@ -455,7 +457,7 @@ router.post('/retry', async (req, res) => {
       if (!product) throw new Error(`Product not found: ${item.name}`);
       
       const reservationId = new mongoose.Types.ObjectId().toString();
-      const reservedKey = `product:reserved:${product._id}`;
+      const reservedKey = `product:reserved_qty:${product._id}`;
       const reservationKey = `reservation:${reservationId}`;
       const reservationsSetKey = `product:reservations:${product._id}`;
       const ttl = 600; // 10 minutes
@@ -530,7 +532,7 @@ router.post('/retry', async (req, res) => {
         try {
           await redis.evalSha(scriptShas.releaseReservation, {
             keys: [
-              `product:reserved:${resv.productId}`,
+              `product:reserved_qty:${resv.productId}`,
               `reservation:${resv.reservationId}`,
               `product:reservations:${resv.productId}`
             ],
@@ -575,7 +577,7 @@ router.post('/release-reservation', async (req, res) => {
           try {
             await redis.evalSha(scriptShas.releaseReservation, {
               keys: [
-                `product:reserved:${item.product._id}`,
+                `product:reserved_qty:${item.product._id}`,
                 `reservation:${resvId}`,
                 `product:reservations:${item.product._id}`
               ],
@@ -847,7 +849,7 @@ router.post('/release-reservation', async (req, res) => {
           try {
             await redis.evalSha(scriptShas.releaseReservation, {
               keys: [
-                `product:reserved:${item.product._id}`,
+                `product:reserved_qty:${item.product._id}`,
                 `reservation:${resvId}`,
                 `product:reservations:${item.product._id}`
               ],
@@ -885,7 +887,7 @@ router.post('/clear-reservations', async (req, res) => {
             try {
               await redis.evalSha(scriptShas.releaseReservation, {
                 keys: [
-                  `product:reserved:${item.product._id}`,
+                  `product:reserved_qty:${item.product._id}`,
                   `reservation:${resvId}`,
                   `product:reservations:${item.product._id}`
                 ],

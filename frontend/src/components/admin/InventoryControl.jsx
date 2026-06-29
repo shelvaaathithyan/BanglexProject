@@ -140,8 +140,7 @@ export default function InventoryControl() {
       productId: product._id,
       productName: product.name,
       currentStock: product.stock,
-      newStock: product.stock,
-      reason: ''
+      newStock: product.stock
     });
     setIsAdjustOpen(true);
   };
@@ -159,8 +158,7 @@ export default function InventoryControl() {
         },
         body: JSON.stringify({
           productId: adjustData.productId,
-          newStock: Number(adjustData.newStock),
-          reason: adjustData.reason
+          newStock: Number(adjustData.newStock)
         })
       });
       if (!res.ok) {
@@ -502,17 +500,7 @@ export default function InventoryControl() {
                   <input type="number" min="0" value={adjustData.newStock} onChange={(e) => setAdjustData({...adjustData, newStock: e.target.value})} required style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '8px' }} />
                 </div>
               </div>
-              <div style={{ marginBottom: '1.5rem' }}>
-                <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500, marginBottom: '0.5rem', color: '#475569' }}>Reason</label>
-                <select value={adjustData.reason} onChange={(e) => setAdjustData({...adjustData, reason: e.target.value})} required style={{ width: '100%', padding: '0.75rem', border: '1px solid #e2e8f0', borderRadius: '8px', background: 'white' }}>
-                  <option value="">Select a reason</option>
-                  <option value="Physical count mismatch">Physical count mismatch</option>
-                  <option value="Damaged goods">Damaged goods</option>
-                  <option value="Supplier restock">Supplier restock</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-              <div style={{ display: 'flex', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '12px', marginTop: '1.5rem' }}>
                 <button type="button" onClick={() => setIsAdjustOpen(false)} style={{ flex: 1, padding: '0.75rem', background: 'white', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer' }}>Cancel</button>
                 <button type="submit" disabled={adjusting} style={{ flex: 1, padding: '0.75rem', background: '#3b82f6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', opacity: adjusting ? 0.7 : 1 }}>
                   {adjusting ? 'Saving...' : 'Confirm Adjustment'}

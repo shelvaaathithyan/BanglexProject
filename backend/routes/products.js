@@ -144,7 +144,13 @@ router.put('/:id', (req, res, next) => {
     if (stock !== undefined) {
       const newStock = Number(stock);
       const redis = require('../config/redis').getRedisClient();
-      const reservedCount = parseInt(await redis.get(`product:reserved:${product._id.toString()}`) || 0, 10);
+      const scriptShas = require('../config/redis').getScriptShas();
+      const nowStr = Date.now().toString();
+      const reservedCountRes = await redis.evalSha(scriptShas.getReservedStock, {
+        keys: [`product:reserved_qty:${product._id.toString()}`, `product:reservations:${product._id.toString()}`],
+        arguments: [nowStr]
+      });
+      const reservedCount = parseInt(reservedCountRes || 0, 10);
       
       if (newStock < reservedCount) {
         return res.status(400).json({ 
