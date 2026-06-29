@@ -560,11 +560,35 @@ router.post('/retry', async (req, res) => {
 // POST /api/payments/release-reservation
 router.post('/release-reservation', async (req, res) => {
   try {
-    const { orderId } = req.body;
-    if (!orderId) return res.status(400).json({ message: 'Order ID is required' });
+    const { orderId, errorDetails, cancelReason } = req.body;
+    if (!orderId) return res.status(400).json({ success: false, message: 'Order ID is required' });
     
     const order = await Order.findById(orderId).populate('items.product');
-    if (!order) return res.status(404).json({ message: 'Order not found' });
+    // Idempotency rule 1: If order is missing, just return success.
+    if (!order) return res.json({ success: true, message: 'Order not found (Ignored)' });
+    
+    // Safeguard rule 1: Never release reservation if payment actually completed.
+    if (order.paymentStatus === 'Completed') {
+      return res.json({ success: true, message: 'Payment already completed. No release needed.' });
+    }
+
+    // Log the error into timeline if provided
+    let shouldSave = false;
+    if (errorDetails) {
+      const note = `Reason: ${errorDetails.reason || 'N/A'}\nCode: ${errorDetails.code || 'N/A'}\nDescription: ${errorDetails.description || 'N/A'}\nGateway: Razorpay`;
+      order.timeline.push({ status: 'Payment Failed', note });
+      shouldSave = true;
+    } else if (cancelReason) {
+      order.timeline.push({ status: 'Payment Cancelled', note: cancelReason });
+      shouldSave = true;
+    }
+    
+    console.log('--- DEBUG RELEASE TIMELINE ---', { orderId, errorDetails, cancelReason, shouldSave });
+
+    if (shouldSave) {
+      order.markModified('timeline');
+      await order.save();
+    }
     
     const redis = getRedisClient();
     const scriptShas = getScriptShas();
@@ -591,7 +615,8 @@ router.post('/release-reservation', async (req, res) => {
     res.json({ success: true, message: 'Reservations released successfully' });
   } catch (error) {
     console.error('Release Reservation Error:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    // Idempotency rule 2: Always return success for client, even if internal error happened on release.
+    res.json({ success: true, message: 'Server error (Ignored)' });
   }
 });
 

@@ -290,11 +290,6 @@ const CheckoutPage = () => {
             const verifyData = await verifyRes.json();
             
             if (verifyData.success) {
-              if (import.meta.env.VITE_PAYMENT_DEBUG === 'true') {
-                console.log('--- [Razorpay] Payment Success & Verified ---');
-                console.log('Order ID:', orderData.order._id);
-                console.log('Transaction ID:', response.razorpay_payment_id);
-              }
               // Clear cart
               localStorage.removeItem('cart');
               
@@ -323,7 +318,6 @@ const CheckoutPage = () => {
         modal: {
           ondismiss: async function() {
             // Customer closed the popup. Order stays pending, release reservation.
-            console.log('Customer closed payment popup, releasing reservation...');
             try {
               await fetch(`${API_BASE}/payments/release-reservation`, {
                 method: 'POST',
@@ -331,7 +325,10 @@ const CheckoutPage = () => {
                   'Content-Type': 'application/json',
                   Authorization: `Bearer ${token}`
                 },
-                body: JSON.stringify({ orderId: orderData.order._id })
+                body: JSON.stringify({ 
+                  orderId: orderData.order._id,
+                  cancelReason: 'Payment popup closed by user'
+                })
               });
             } catch (err) {
               console.error('Failed to release reservation', err);
@@ -342,26 +339,34 @@ const CheckoutPage = () => {
 
       const rzp = new window.Razorpay(options);
 
-      if (import.meta.env.VITE_PAYMENT_DEBUG === 'true') {
-        console.log('--- [Razorpay] Checkout Opened ---');
-        console.log('Options:', options);
-      }
+      rzp.on('payment.failed', async function (response){
+        const errorDetails = {
+          code: response.error?.code,
+          description: response.error?.description,
+          source: response.error?.source,
+          step: response.error?.step,
+          reason: response.error?.reason,
+          metadata: response.error?.metadata
+        };
 
-      rzp.on('payment.failed', function (response){
-        if (import.meta.env.VITE_PAYMENT_DEBUG === 'true') {
-          console.error("--- [Razorpay] Payment Failed ---", response);
-          console.error({
-              code: response.error?.code,
-              description: response.error?.description,
-              source: response.error?.source,
-              step: response.error?.step,
-              reason: response.error?.reason,
-              metadata: response.error?.metadata
+        try {
+          await fetch(`${API_BASE}/payments/release-reservation`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ 
+              orderId: orderData.order._id,
+              errorDetails
+            })
           });
+        } catch (err) {
+          console.error('Failed to release reservation on failure', err);
         }
         
-        // Detailed Alert
-        alert(`Payment Failed\n\nReason: ${response.error?.reason || 'Unknown'}\nDescription: ${response.error?.description || 'No description available'}\nError Code: ${response.error?.code || 'N/A'}`);
+        // Detailed Alert avoiding "Unknown" fallbacks where possible
+        alert(`Payment Failed\n\nReason: ${errorDetails.reason || 'Not specified'}\nDescription: ${errorDetails.description || 'No description available'}\nError Code: ${errorDetails.code || 'N/A'}`);
       });
       
       rzp.open();
