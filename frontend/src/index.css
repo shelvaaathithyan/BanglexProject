@@ -4344,8 +4344,7 @@ body {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 1.5rem;
-  font-family: var(--font-primary, 
-\Poppins\', sans-serif);
+  font-family: 'Poppins', sans-serif;
 }
 
 .checkout-header {
@@ -4577,6 +4576,7 @@ body {
   margin-bottom: 1.5rem;
   max-height: 350px;
   overflow-y: auto;
+  padding-top: 0.75rem;
   padding-right: 0.5rem;
 }
 
