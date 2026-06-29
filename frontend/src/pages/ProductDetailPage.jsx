@@ -144,8 +144,9 @@ const ProductDetailPage = () => {
   };
 
   const incrementQty = () => setQuantity(prev => {
-    if (product && prev >= product.stock) {
-      alert(`Only ${product.stock} units are available in stock.`);
+    const available = product.stockMetrics?.available !== undefined ? product.stockMetrics.available : product.stock;
+    if (product && prev >= available) {
+      alert(`Only ${available} units are available in stock.`);
       return prev;
     }
     return prev + 1;
@@ -153,7 +154,8 @@ const ProductDetailPage = () => {
   const decrementQty = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
 
   const handleAddToCart = () => {
-    if (product && product.stock <= 0) {
+    const available = product.stockMetrics?.available !== undefined ? product.stockMetrics.available : product.stock;
+    if (product && available <= 0) {
       alert("This product is currently out of stock.");
       return;
     }
@@ -169,14 +171,14 @@ const ProductDetailPage = () => {
     
     if (existingIndex > -1) {
       const prospectiveQty = currentCart[existingIndex].quantity + quantity;
-      if (product && prospectiveQty > product.stock) {
-        alert(`Only ${product.stock} units are available in stock. You already have ${currentCart[existingIndex].quantity} in your cart.`);
+      if (product && prospectiveQty > available) {
+        alert(`Only ${available} units are available in stock. You already have ${currentCart[existingIndex].quantity} in your cart.`);
         return;
       }
       currentCart[existingIndex].quantity = prospectiveQty;
     } else {
-      if (product && quantity > product.stock) {
-        alert(`Only ${product.stock} units are available in stock.`);
+      if (product && quantity > available) {
+        alert(`Only ${available} units are available in stock.`);
         return;
       }
       currentCart.push({
@@ -392,6 +394,24 @@ const ProductDetailPage = () => {
                  <span>{quantity}</span>
                  <button onClick={incrementQty}><Plus size={16} /></button>
                </div>
+               {/* Stock Warning */}
+               {(() => {
+                 const available = product.stockMetrics?.available !== undefined ? product.stockMetrics.available : product.stock;
+                 if (available === 1) {
+                   return (
+                     <div style={{ color: '#ef4444', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.75rem', fontSize: '0.875rem' }}>
+                       <span>⚠️ Only 1 item left in stock</span>
+                     </div>
+                   );
+                 } else if (available > 1 && available <= 3) {
+                   return (
+                     <div style={{ color: '#a16207', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.25rem', marginTop: '0.75rem', fontSize: '0.875rem' }}>
+                       <span>Only {available} left</span>
+                     </div>
+                   );
+                 }
+                 return null;
+               })()}
              </div>
  
              <div className="delivery-info">

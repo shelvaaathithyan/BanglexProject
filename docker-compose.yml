@@ -6,3 +6,12 @@ services:
     env_file:
       - ./backend/.env
     restart: unless-stopped
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:alpine
+    command: redis-server --save "" --appendonly no
+    ports:
+      - "6379:6379"
+    restart: unless-stopped

@@ -11,6 +11,9 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  reservationIds: [{
+    type: String
+  }],
   contactInformation: {
     fullName: String,
     email: String,

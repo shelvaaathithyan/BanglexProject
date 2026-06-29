@@ -9,6 +9,7 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [profileIncomplete, setProfileIncomplete] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const navigate = useNavigate();
 
   // Reference & height state for dynamic mobile menu alignment
@@ -39,6 +40,7 @@ const Navbar = () => {
       });
       if (res.ok) {
         const user = await res.json();
+        setCurrentUser(user);
         const isIncomplete = !user.firstName || !user.lastName || !user.address;
         setProfileIncomplete(isIncomplete);
       }
@@ -219,7 +221,22 @@ const Navbar = () => {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const token = localStorage.getItem('token');
+    if (token && currentUser) {
+      try {
+        await fetch(`${API_BASE}/payments/clear-reservations`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ userId: currentUser._id })
+        });
+      } catch (err) {
+        console.error('Failed to clear reservations on logout', err);
+      }
+    }
     localStorage.removeItem('token');
     setIsLoggedIn(false);
     setIsProfileOpen(false);
@@ -241,6 +258,20 @@ const Navbar = () => {
     localStorage.setItem('cart', JSON.stringify(currentCart));
     setCartItems(currentCart);
     window.dispatchEvent(new Event('cartUpdated'));
+
+    if (currentCart.length === 0 && currentUser) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch(`${API_BASE}/payments/clear-reservations`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ userId: currentUser._id })
+        }).catch(err => console.error('Failed to clear reservations on empty cart', err));
+      }
+    }
   };
 
   const removeCartItem = (index) => {
@@ -249,6 +280,20 @@ const Navbar = () => {
     localStorage.setItem('cart', JSON.stringify(currentCart));
     setCartItems(currentCart);
     window.dispatchEvent(new Event('cartUpdated'));
+
+    if (currentCart.length === 0 && currentUser) {
+      const token = localStorage.getItem('token');
+      if (token) {
+        fetch(`${API_BASE}/payments/clear-reservations`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ userId: currentUser._id })
+        }).catch(err => console.error('Failed to clear reservations on empty cart', err));
+      }
+    }
   };
 
   const calculateSubtotal = () => {

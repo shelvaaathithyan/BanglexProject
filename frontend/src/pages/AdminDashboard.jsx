@@ -16,6 +16,7 @@ import {
 } from 'recharts';
 import API_BASE from '../config/api';
 import PaymentsLedger from '../components/admin/PaymentsLedger';
+import InventoryControl from '../components/admin/InventoryControl';
 
 const mockCategories = [
   { id: 1, name: 'Glass Bangles', desc: 'Traditional and designer glass bangles', products: 45, status: 'Active' },
@@ -765,7 +766,9 @@ const AdminDashboard = () => {
             <button className={`admin-nav-item ${activeTab === 'payments' ? 'active' : ''}`} onClick={() => setActiveTab('payments')} style={{ background: activeTab === 'payments' ? '#e11d48' : 'transparent', color: activeTab === 'payments' ? 'white' : '#94a3b8' }}>
               <div className="admin-nav-item-left"><CreditCard size={18} /> Payments Ledger</div>
             </button>
-            <button className="admin-nav-item"><div className="admin-nav-item-left"><Archive size={18} /> Inventory Control</div></button>
+            <button className={`admin-nav-item ${activeTab === 'inventory-control' ? 'active' : ''}`} onClick={() => setActiveTab('inventory-control')} style={{ background: activeTab === 'inventory-control' ? '#e11d48' : 'transparent', color: activeTab === 'inventory-control' ? 'white' : '#94a3b8' }}>
+              <div className="admin-nav-item-left"><Archive size={18} /> Inventory Control</div>
+            </button>
           </div>
 
           <div className="admin-nav-group">
@@ -1169,7 +1172,8 @@ const AdminDashboard = () => {
                       <th>Product</th>
                       <th>Category</th>
                       <th>Price</th>
-                      <th>Stock</th>
+                      <th>Current Stock</th>
+                      <th>Reserved</th>
                       <th>Status</th>
                       <th>Actions</th>
                     </tr>
@@ -1193,11 +1197,22 @@ const AdminDashboard = () => {
                         <td style={{ fontWeight: 500, color: product.stock === 0 ? '#000000' : 'inherit' }}>₹{product.price}</td>
                         <td>
                           <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: product.stock === 0 ? '#000000' : (product.stock > 15 ? '#dcfce7' : '#fef08a'), color: product.stock === 0 ? '#ffffff' : (product.stock > 15 ? '#16a34a' : '#a16207'), fontWeight: 600 }}>
-                            {product.stock} in stock
+                            {product.stock}
                           </span>
                         </td>
                         <td>
-                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: product.stock === 0 ? '#000000' : '#dcfce7', color: product.stock === 0 ? '#ffffff' : '#16a34a', fontWeight: 600 }}>Active</span>
+                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', background: product.stock === 0 ? '#000000' : '#f1f5f9', color: product.stock === 0 ? '#ffffff' : '#475569', fontWeight: 600 }}>
+                            {product.stockMetrics?.reserved || 0}
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{ padding: '0.2rem 0.6rem', borderRadius: '99px', fontSize: '0.75rem', 
+                            background: product.stock > 0 ? '#dcfce7' : ((product.stockMetrics?.reserved || 0) > 0 ? '#fef08a' : '#000000'), 
+                            color: product.stock > 0 ? '#16a34a' : ((product.stockMetrics?.reserved || 0) > 0 ? '#a16207' : '#ffffff'), 
+                            fontWeight: 600 
+                          }}>
+                            {product.stock > 0 ? 'In Stock' : ((product.stockMetrics?.reserved || 0) > 0 ? 'Reserved' : 'Out of Stock')}
+                          </span>
                         </td>
                         <td>
                           <div style={{ display: 'flex', gap: '0.5rem' }}>
@@ -1686,6 +1701,10 @@ const AdminDashboard = () => {
 
           {activeTab === 'payments' && (
             <PaymentsLedger />
+          )}
+
+          {activeTab === 'inventory-control' && (
+            <InventoryControl />
           )}
 
           <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem', marginTop: '1rem' }}>

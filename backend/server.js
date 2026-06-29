@@ -13,7 +13,12 @@ const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
 const festivalRoutes = require('./routes/festivals');
 const paymentRoutes = require('./routes/payments');
+const inventoryRoutes = require('./routes/inventory');
+const { initRedis } = require('./config/redis');
 const app = express();
+
+// Initialize Redis
+initRedis();
 
 // Middleware
 app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }));
@@ -915,6 +920,7 @@ app.use('/products', productRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/festivals', festivalRoutes);
 app.use('/payments', paymentRoutes);
+app.use('/api/inventory', inventoryRoutes);
 app.use('/notifications', require('./routes/notifications'));
 
 app.get('/', (req, res) => {

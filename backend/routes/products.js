@@ -141,7 +141,35 @@ router.put('/:id', (req, res, next) => {
     if (description !== undefined) product.description = description;
     if (category) product.category = category;
     if (price) product.price = Number(price);
-    if (stock !== undefined) product.stock = Number(stock);
+    if (stock !== undefined) {
+      const newStock = Number(stock);
+      const redis = require('../config/redis').getRedisClient();
+      const reservedCount = parseInt(await redis.get(`product:reserved:${product._id.toString()}`) || 0, 10);
+      
+      if (newStock < reservedCount) {
+        return res.status(400).json({ 
+          message: `Cannot reduce stock because ${reservedCount} units are currently reserved by customers in active checkout sessions. Wait for reservations to expire.` 
+        });
+      }
+      
+      const oldStock = product.stock;
+      const difference = newStock - oldStock;
+      if (difference !== 0) {
+        const movement = JSON.stringify({
+          eventType: 'Admin Stock Adjustment',
+          productName: product.name,
+          productId: product._id.toString(),
+          quantity: newStock,
+          timestamp: new Date().toISOString()
+        });
+        
+        const multi = redis.multi();
+        multi.lPush('inventory:recent-movements', movement);
+        multi.lTrim('inventory:recent-movements', 0, 2);
+        await multi.exec();
+      }
+      product.stock = newStock;
+    }
     if (color !== undefined) product.color = color;
     if (isPopular !== undefined) product.isPopular = isPopular === 'true';
     if (sizes !== undefined) product.sizes = JSON.parse(sizes);

@@ -9,6 +9,28 @@ const Product = require('../models/Product');
 const Invoice = require('../models/Invoice');
 const Notification = require('../models/Notification');
 const { razorpay, verifySignature, verifyWebhookSignature } = require('../utils/razorpay');
+const { getRedisClient, getScriptShas } = require('../config/redis');
+
+// Helper to record recent movements to Redis
+const recordMovement = async (eventType, product, quantity) => {
+  try {
+    const redis = getRedisClient();
+    const movement = JSON.stringify({
+      eventType,
+      productName: product.name,
+      productId: product._id.toString(),
+      quantity,
+      timestamp: new Date().toISOString()
+    });
+    
+    const multi = redis.multi();
+    multi.lPush('inventory:recent-movements', movement);
+    multi.lTrim('inventory:recent-movements', 0, 2);
+    await multi.exec();
+  } catch (err) {
+    console.error('Error recording movement to Redis:', err);
+  }
+};
 
 // Helper to calculate amounts securely
 const calculateAmounts = async (items, giftOptions = {}, deliveryOption = 'Standard') => {
@@ -75,22 +97,74 @@ router.get('/my-orders', async (req, res) => {
 
 // POST /api/payments/create-order
 router.post('/create-order', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  const redis = getRedisClient();
+  const scriptShas = getScriptShas();
+  const createdReservations = [];
+
   try {
     const { items, shippingAddress, contactInformation, giftOptions, orderNotes, deliveryOption, user } = req.body;
-    if (!user) return res.status(401).json({ message: 'Unauthorized' });
+    if (!user) {
+      await session.abortTransaction();
+      session.endSession();
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
 
-    // Verify product stock
+    // Verify product stock using Lua scripts
     for (const item of items) {
       const productId = item.product || item._id;
-      const product = await Product.findById(productId);
+      const product = await Product.findById(productId).session(session);
       if (!product) {
-        return res.status(404).json({ success: false, message: `Product not found: ${item.name}` });
+        throw new Error(`Product not found: ${item.name}`);
       }
-      if (product.stock < item.quantity) {
-        return res.status(400).json({ 
-          success: false, 
-          message: `Only ${product.stock} units of "${product.name}" are available in stock. You requested ${item.quantity}.` 
+      
+      const reservationId = new mongoose.Types.ObjectId().toString();
+      const reservedKey = `product:reserved:${product._id}`;
+      const reservationKey = `reservation:${reservationId}`;
+      const reservationsSetKey = `product:reservations:${product._id}`;
+      const ttl = 600; // 10 minutes
+
+      let result;
+      try {
+        result = await redis.evalSha(
+          scriptShas.reserveInventory,
+          {
+            keys: [reservedKey, reservationKey, reservationsSetKey],
+            arguments: [
+              item.quantity.toString(),
+              product.stock.toString(),
+              user,
+              ttl.toString(),
+              product._id.toString(),
+              reservationId
+            ]
+          }
+        );
+      } catch (redisErr) {
+        // Fallback to EVAL if script is missing
+        const fs = require('fs');
+        const path = require('path');
+        const reserveScript = fs.readFileSync(path.join(__dirname, '../redis/reserveInventory.lua'), 'utf8');
+        result = await redis.eval(reserveScript, {
+            keys: [reservedKey, reservationKey, reservationsSetKey],
+            arguments: [
+              item.quantity.toString(),
+              product.stock.toString(),
+              user,
+              ttl.toString(),
+              product._id.toString(),
+              reservationId
+            ]
         });
+      }
+
+      if (result === 'SUCCESS') {
+        createdReservations.push({ reservationId, productId: product._id, quantity: item.quantity, product });
+        await recordMovement('Reservation Created', product, item.quantity);
+      } else {
+        // Rollback
+        throw new Error(`INSUFFICIENT_STOCK:${product.name}`);
       }
     }
 
@@ -99,37 +173,18 @@ router.post('/create-order', async (req, res) => {
 
     // Create Razorpay Order
     const options = {
-      amount: Math.round(grandTotal * 100), // Amount in paise
+      amount: Math.round(grandTotal * 100),
       currency: 'INR',
       receipt: orderNumber
     };
     
-    if (process.env.PAYMENT_DEBUG === 'true') {
-      console.log('--- [Razorpay] Order Creation Request ---');
-      console.log('Endpoint: razorpay.orders.create');
-      console.log('Request Body:', JSON.stringify(options, null, 2));
-      console.log('Timestamp:', new Date().toISOString());
-    }
-
     const rzpOrder = await razorpay.orders.create(options);
 
-    if (process.env.PAYMENT_DEBUG === 'true') {
-      console.log('--- [Razorpay] Order Creation Response ---');
-      console.log('HTTP Status: 200 OK');
-      console.log('Order ID:', rzpOrder.id);
-      console.log('Amount:', rzpOrder.amount);
-      console.log('Currency:', rzpOrder.currency);
-      console.log('Status:', rzpOrder.status);
-      console.log('Complete Response Body:', JSON.stringify(rzpOrder, null, 2));
-    }
-
-    // Map items to ensure product reference is set
     const orderItems = items.map(item => ({
       ...item,
       product: item.product || item._id
     }));
 
-    // Create Pending Order in DB
     const newOrder = new Order({
       orderNumber,
       user,
@@ -145,10 +200,13 @@ router.post('/create-order', async (req, res) => {
       gatewayOrderId: rzpOrder.id,
       giftOptions,
       orderNotes,
+      reservationIds: createdReservations.map(r => r.reservationId),
       timeline: [{ status: 'Created', note: 'Order created, pending payment.' }]
     });
 
-    await newOrder.save();
+    await newOrder.save({ session });
+    await session.commitTransaction();
+    session.endSession();
 
     res.json({
       success: true,
@@ -160,7 +218,33 @@ router.post('/create-order', async (req, res) => {
     });
 
   } catch (error) {
+    // Release any reservations successfully created during this failed transaction
+    if (createdReservations.length > 0) {
+      for (const resv of createdReservations) {
+        try {
+          await redis.evalSha(scriptShas.releaseReservation, {
+            keys: [
+              `product:reserved:${resv.productId}`,
+              `reservation:${resv.reservationId}`,
+              `product:reservations:${resv.productId}`
+            ],
+            arguments: [resv.reservationId]
+          });
+          await recordMovement('Reservation Released', resv.product, resv.quantity);
+        } catch(e) {}
+      }
+    }
+    await session.abortTransaction();
+    session.endSession();
     console.error('Create Order Error:', error);
+    
+    if (error.message.startsWith('INSUFFICIENT_STOCK:')) {
+      return res.status(409).json({ 
+        success: false, 
+        message: `Some items are no longer available in the requested quantity.`,
+        details: `Insufficient stock for "${error.message.split(':')[1]}".` 
+      });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 });
@@ -188,6 +272,12 @@ router.post('/verify', async (req, res) => {
     const order = await Order.findById(orderId).session(session);
     if (!order) {
       throw new Error('Order not found');
+    }
+
+    if (order.paymentStatus === 'Completed') {
+      await session.commitTransaction();
+      session.endSession();
+      return res.json({ success: true, orderId: order._id, message: 'Already processed' });
     }
 
     if (!isValid) {
@@ -278,8 +368,11 @@ router.post('/verify', async (req, res) => {
     order.timeline.push({ status: 'Confirmed', note: 'Order confirmed and sent for processing.' });
     await order.save({ session });
 
-    // 5. Reduce Inventory and generate notification
+    // 5. Reduce Inventory, Delete Reservation and generate notification
     let notificationMsg = `Order Details:\nOrder #: ${order.orderNumber}\nAmount: ₹${order.grandTotal}\n\nInventory Updates:\n`;
+    const redis = getRedisClient();
+    const scriptShas = getScriptShas();
+
     for (const item of order.items) {
       const updatedProduct = await Product.findByIdAndUpdate(
         item.product,
@@ -288,6 +381,29 @@ router.post('/verify', async (req, res) => {
       );
       if (updatedProduct) {
         notificationMsg += `${updatedProduct.name}: Decreased by ${item.quantity}.\nCurrent stock: ${updatedProduct.stock}\n`;
+        await recordMovement('Payment Success', updatedProduct, item.quantity);
+      }
+    }
+    
+    // Release the reservations now that payment is confirmed and stock is reduced
+    if (order.reservationIds && order.reservationIds.length > 0) {
+      for (let i = 0; i < order.reservationIds.length; i++) {
+        const resvId = order.reservationIds[i];
+        const item = order.items[i];
+        if (item) {
+          try {
+            await redis.evalSha(scriptShas.releaseReservation, {
+              keys: [
+                `product:reserved:${item.product}`,
+                `reservation:${resvId}`,
+                `product:reservations:${item.product}`
+              ],
+              arguments: [resvId]
+            });
+          } catch (e) {
+             console.error("Error releasing reservation on payment success:", e);
+          }
+        }
       }
     }
     
@@ -314,12 +430,74 @@ router.post('/verify', async (req, res) => {
 
 // POST /api/payments/retry
 router.post('/retry', async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  const redis = getRedisClient();
+  const scriptShas = getScriptShas();
+  const createdReservations = [];
+
   try {
     const { orderId } = req.body;
+    const order = await Order.findById(orderId).session(session);
+    if (!order) {
+      throw new Error('Order not found');
+    }
+    if (order.paymentStatus === 'Completed') {
+      throw new Error('Order already paid');
+    }
+
+    // Re-verify stock before retry and recreate reservations using Lua scripts
+    for (const item of order.items) {
+      const product = await Product.findById(item.product).session(session);
+      if (!product) throw new Error(`Product not found: ${item.name}`);
+      
+      const reservationId = new mongoose.Types.ObjectId().toString();
+      const reservedKey = `product:reserved:${product._id}`;
+      const reservationKey = `reservation:${reservationId}`;
+      const reservationsSetKey = `product:reservations:${product._id}`;
+      const ttl = 600; // 10 minutes
+
+      let result;
+      try {
+        result = await redis.evalSha(scriptShas.reserveInventory, {
+          keys: [reservedKey, reservationKey, reservationsSetKey],
+          arguments: [
+            item.quantity.toString(),
+            product.stock.toString(),
+            order.user.toString(),
+            ttl.toString(),
+            product._id.toString(),
+            reservationId
+          ]
+        });
+      } catch (err) {
+        // fallback
+        const fs = require('fs');
+        const path = require('path');
+        const reserveScript = fs.readFileSync(path.join(__dirname, '../redis/reserveInventory.lua'), 'utf8');
+        result = await redis.eval(reserveScript, {
+          keys: [reservedKey, reservationKey, reservationsSetKey],
+          arguments: [
+            item.quantity.toString(),
+            product.stock.toString(),
+            order.user.toString(),
+            ttl.toString(),
+            product._id.toString(),
+            reservationId
+          ]
+        });
+      }
+
+      if (result === 'SUCCESS') {
+        createdReservations.push({ reservationId, productId: product._id, quantity: item.quantity, product });
+        await recordMovement('Reservation Created', product, item.quantity);
+      } else {
+        throw new Error(`INSUFFICIENT_STOCK:${product.name}`);
+      }
+    }
     
-    const order = await Order.findById(orderId);
-    if (!order) return res.status(404).json({ message: 'Order not found' });
-    if (order.paymentStatus === 'Completed') return res.status(400).json({ message: 'Order already paid' });
+    // Overwrite old reservationIds
+    order.reservationIds = createdReservations.map(r => r.reservationId);
 
     // Create a NEW Razorpay Order
     const options = {
@@ -329,10 +507,11 @@ router.post('/retry', async (req, res) => {
     };
     
     const rzpOrder = await razorpay.orders.create(options);
-
-    // Update the pending order with the new gateway ID
     order.gatewayOrderId = rzpOrder.id;
-    await order.save();
+    await order.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
 
     res.json({
       success: true,
@@ -343,9 +522,77 @@ router.post('/retry', async (req, res) => {
     });
 
   } catch (error) {
+    if (createdReservations.length > 0) {
+      for (const resv of createdReservations) {
+        try {
+          await redis.evalSha(scriptShas.releaseReservation, {
+            keys: [
+              `product:reserved:${resv.productId}`,
+              `reservation:${resv.reservationId}`,
+              `product:reservations:${resv.productId}`
+            ],
+            arguments: [resv.reservationId]
+          });
+          await recordMovement('Reservation Released', resv.product, resv.quantity);
+        } catch(e) {}
+      }
+    }
+    await session.abortTransaction();
+    session.endSession();
     console.error('Retry Payment Error:', error);
-    res.status(500).json({ success: false, message: error.message });
+
+    if (error.message.startsWith('INSUFFICIENT_STOCK:')) {
+      return res.status(409).json({ 
+        success: false, 
+        message: `Some items are no longer available in the requested quantity.`,
+        details: `Insufficient stock for "${error.message.split(':')[1]}".` 
+      });
+    }
+    res.status(error.message.includes('not found') ? 404 : 500).json({ success: false, message: error.message });
   }
+});
+
+// POST /api/payments/release-reservation
+router.post('/release-reservation', async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    if (!orderId) return res.status(400).json({ message: 'Order ID is required' });
+    
+    const order = await Order.findById(orderId).populate('items.product');
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+    
+    const redis = getRedisClient();
+    const scriptShas = getScriptShas();
+
+    if (order.reservationIds && order.reservationIds.length > 0) {
+      for (let i = 0; i < order.reservationIds.length; i++) {
+        const resvId = order.reservationIds[i];
+        const item = order.items[i];
+        if (item && item.product) {
+          try {
+            await redis.evalSha(scriptShas.releaseReservation, {
+              keys: [
+                `product:reserved:${item.product._id}`,
+                `reservation:${resvId}`,
+                `product:reservations:${item.product._id}`
+              ],
+              arguments: [resvId]
+            });
+            await recordMovement('Reservation Released', item.product, item.quantity);
+          } catch(e) {}
+        }
+      }
+    }
+    res.json({ success: true, message: 'Reservations released successfully' });
+  } catch (error) {
+    console.error('Release Reservation Error:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+// POST /api/payments/clear-reservations
+router.post('/clear-reservations', async (req, res) => {
+  res.json({ success: true, message: 'Cleared' });
 });
 
 // POST /api/payments/webhook
@@ -378,8 +625,16 @@ router.post('/webhook', express.raw({ type: 'application/json' }), async (req, r
     // Idempotency check: Is this payment already recorded?
     if (event.event === 'payment.captured' || event.event === 'order.paid') {
       const paymentId = event.payload.payment.entity.id;
-      const existingPayment = await Payment.findOne({ gatewayPaymentId: paymentId });
+      const rzpOrderId = event.payload.payment.entity.order_id || (event.payload.order && event.payload.order.entity.id);
       
+      if (rzpOrderId) {
+        const order = await Order.findOne({ gatewayOrderId: rzpOrderId });
+        if (order && order.paymentStatus === 'Completed') {
+          return res.status(200).send('Already processed');
+        }
+      }
+
+      const existingPayment = await Payment.findOne({ gatewayPaymentId: paymentId });
       if (existingPayment && existingPayment.status === 'Completed') {
         return res.status(200).send('Already processed');
       }

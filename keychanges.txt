@@ -7,3 +7,4 @@ excel extraction for admin panel ( date to date )
 delivery address( extraction ) 
 rating like 
 order tracking ( bulk update check )
+product details page(color): image,cart(refer)

@@ -24,10 +24,12 @@
     "mongoose": "^9.7.0",
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0",
+    "node-cron": "^4.5.0",
     "nodemailer": "^9.0.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "razorpay": "^2.9.6",
+    "redis": "^6.0.1",
     "twilio": "^6.0.2"
   }
 }

@@ -6,12 +6,17 @@ import { ArrowLeft, Truck, Gift, Info } from 'lucide-react';
 import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
 import { loadRazorpayScript } from '../utils/razorpayHelper';
 import API_BASE from '../config/api';
+import AvailabilityModal from '../components/checkout/AvailabilityModal';
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const [cartItems, setCartItems] = useState([]);
   const [activeFestival, setActiveFestival] = useState(null);
   const [user, setUser] = useState(null);
+  
+  const [showAvailabilityModal, setShowAvailabilityModal] = useState(false);
+  const [availabilityMessage, setAvailabilityMessage] = useState('');
+  const [availabilityDetails, setAvailabilityDetails] = useState('');
 
   // Form states
   const [contact, setContact] = useState({ fullName: '', mobile: '', email: '' });
@@ -113,6 +118,17 @@ const CheckoutPage = () => {
     window.dispatchEvent(new Event('cartUpdated'));
 
     if (updatedCart.length === 0) {
+      const token = localStorage.getItem('token');
+      if (token && user) {
+        fetch(`${API_BASE}/payments/clear-reservations`, {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}` 
+          },
+          body: JSON.stringify({ userId: user._id })
+        }).catch(err => console.error('Failed to clear reservations on empty cart', err));
+      }
       navigate('/home');
     }
   };
@@ -212,6 +228,13 @@ const CheckoutPage = () => {
 
       const orderData = await orderResponse.json();
 
+      if (orderResponse.status === 409) {
+        setAvailabilityMessage(orderData.message);
+        setAvailabilityDetails(orderData.details);
+        setShowAvailabilityModal(true);
+        return;
+      }
+
       if (!orderData.success) {
         alert(orderData.message || 'Failed to create order');
         return;
@@ -276,9 +299,21 @@ const CheckoutPage = () => {
           color: '#e11d48'
         },
         modal: {
-          ondismiss: function() {
-            // Customer closed the popup. Order stays pending.
-            console.log('Customer closed payment popup');
+          ondismiss: async function() {
+            // Customer closed the popup. Order stays pending, release reservation.
+            console.log('Customer closed payment popup, releasing reservation...');
+            try {
+              await fetch(`${API_BASE}/payments/release-reservation`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify({ orderId: orderData.order._id })
+              });
+            } catch (err) {
+              console.error('Failed to release reservation', err);
+            }
           }
         }
       };
@@ -595,6 +630,12 @@ const CheckoutPage = () => {
         </form>
       </main>
       <Footer />
+      <AvailabilityModal 
+        isOpen={showAvailabilityModal} 
+        onClose={() => setShowAvailabilityModal(false)} 
+        message={availabilityMessage}
+        details={availabilityDetails}
+      />
     </div>
   );
 };

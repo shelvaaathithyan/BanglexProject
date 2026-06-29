@@ -48,7 +48,17 @@ const ProductSchema = new mongoose.Schema({
   isPopular: {
     type: Boolean,
     default: false
+  },
+  sku: {
+    type: String,
+    sparse: true,
+    unique: true
   }
 });
+
+// Indexes for faster aggregation and search
+ProductSchema.index({ category: 1 });
+ProductSchema.index({ name: 1 });
+ProductSchema.index({ sku: 1 });
 
 module.exports = mongoose.model('Product', ProductSchema);
