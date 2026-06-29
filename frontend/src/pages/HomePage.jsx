@@ -112,11 +112,30 @@ const HomePage = () => {
     e.preventDefault();
     e.stopPropagation();
     
-    const card = e.target.closest('.product-card');
-    if (!card) {
-      console.log("No product card found");
-      return;
+    // Stock validation BEFORE animating
+    const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
+    const selectedSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'Free Size';
+    const selectedColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Default';
+    
+    const existingIndex = currentCart.findIndex(
+      item => item._id === product._id && item.size === selectedSize && item.color === selectedColor
+    );
+    
+    if (existingIndex > -1) {
+      const prospectiveQty = currentCart[existingIndex].quantity + 1;
+      if (product && prospectiveQty > product.stock) {
+        alert(`Only ${product.stock} units are available in stock. You already have ${currentCart[existingIndex].quantity} in your cart.`);
+        return;
+      }
+    } else {
+      if (product && product.stock <= 0) {
+        alert("This product is currently out of stock.");
+        return;
+      }
     }
+
+    const card = e.target.closest('.product-card');
+    if (!card) return;
     
     const imgElement = card.querySelector('.product-image');
     if (!imgElement) {
@@ -173,30 +192,14 @@ const HomePage = () => {
         clone.remove();
         
         // Update actual cart state
-        const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
         const festivalDiscounted = activeFestival ? getFestivalPrice(product.price, activeFestival) : null;
         const unitPrice = festivalDiscounted !== null && festivalDiscounted < product.price 
           ? festivalDiscounted 
           : (product.isOnSale && product.salePrice ? product.salePrice : product.price);
-        const selectedSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'Free Size';
-        const selectedColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Default';
-        
-        const existingIndex = currentCart.findIndex(
-          item => item._id === product._id && item.size === selectedSize && item.color === selectedColor
-        );
         
         if (existingIndex > -1) {
-          const prospectiveQty = currentCart[existingIndex].quantity + 1;
-          if (product && prospectiveQty > product.stock) {
-            alert(`Only ${product.stock} units are available in stock. You already have ${currentCart[existingIndex].quantity} in your cart.`);
-            return;
-          }
-          currentCart[existingIndex].quantity = prospectiveQty;
+          currentCart[existingIndex].quantity += 1;
         } else {
-          if (product && product.stock <= 0) {
-            alert("This product is currently out of stock.");
-            return;
-          }
           currentCart.push({
             _id: product._id,
             name: product.name,
