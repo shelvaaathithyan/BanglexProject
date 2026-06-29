@@ -8,6 +8,7 @@ import ProductDetailPage from './pages/ProductDetailPage';
 import FestivalOfferPage from './pages/FestivalOfferPage';
 import SizeFinder from './pages/SizeFinder';
 import CheckoutPage from './pages/CheckoutPage';
+import PaymentSuccessPage from './pages/PaymentSuccessPage';
 import './index.css';
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/size-finder" element={<SizeFinder />} />
         <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>

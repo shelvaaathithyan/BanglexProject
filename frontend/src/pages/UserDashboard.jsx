@@ -18,6 +18,7 @@ const UserDashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [savedLooks, setSavedLooks] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [cartItems, setCartItems] = useState([]);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addressForm, setAddressForm] = useState({
@@ -115,7 +116,28 @@ const UserDashboard = () => {
         setIsLoading(false);
       }
     };
+
+    const fetchOrders = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      try {
+        const res = await fetch(`${API_BASE}/payments/my-orders`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          console.log('Fetched Orders:', data);
+          setOrders(data);
+        } else {
+          console.error('Failed to fetch orders, status:', res.status);
+        }
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+      }
+    };
+
     fetchUser();
+    fetchOrders();
   }, []);
 
   const handleChange = (e) => {
@@ -356,13 +378,56 @@ const UserDashboard = () => {
               )}
 
               {activeTab === 'orders' && (
-            <section className="orders-section">
-              <h2 className="section-title">My Orders</h2>
-              <div className="empty-orders">
-                <p>You haven't placed any orders yet.</p>
-                <button className="btn-shop-now" onClick={() => navigate('/')}>Shop Now</button>
-              </div>
-            </section>
+                <section className="orders-section">
+                  <h2 className="section-title">My Orders</h2>
+                  {orders.length === 0 ? (
+                    <div className="empty-orders">
+                      <p>You haven't placed any orders yet.</p>
+                      <button className="btn-shop-now" onClick={() => navigate('/')}>Shop Now</button>
+                    </div>
+                  ) : (
+                    <div className="orders-list" style={{ marginTop: '1rem' }}>
+                      {orders.map(order => (
+                        <div key={order._id} className="order-card" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                            <div>
+                              <strong>Order #{order.orderNumber}</strong>
+                              <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>Placed on: {new Date(order.createdAt).toLocaleDateString()}</div>
+                            </div>
+                            <div style={{ textAlign: 'right' }}>
+                              <span style={{ 
+                                display: 'inline-block', 
+                                padding: '0.25rem 0.75rem', 
+                                borderRadius: '99px', 
+                                fontSize: '0.75rem', 
+                                fontWeight: 'bold',
+                                backgroundColor: order.paymentStatus === 'Completed' ? '#dcfce7' : '#fee2e2',
+                                color: order.paymentStatus === 'Completed' ? '#166534' : '#991b1b'
+                              }}>
+                                {order.paymentStatus}
+                              </span>
+                              <div style={{ fontWeight: 'bold', marginTop: '0.5rem' }}>₹{order.grandTotal.toFixed(2)}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="order-items">
+                            {order.items.map((item, idx) => (
+                              <div key={idx} style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
+                                {item.product && item.product.images && item.product.images[0] && (
+                                  <img src={item.product.images[0]} alt={item.product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                                )}
+                                <div>
+                                  <div style={{ fontWeight: '500' }}>{item.product ? item.product.name : 'Unknown Product'}</div>
+                                  <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Qty: {item.quantity} | Size: {item.size}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </section>
               )}
               
               {activeTab === 'saved' && (

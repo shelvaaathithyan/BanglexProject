@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { ArrowLeft, Truck, Gift, Info } from 'lucide-react';
 import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
+import { loadRazorpayScript } from '../utils/razorpayHelper';
 import API_BASE from '../config/api';
 
 const CheckoutPage = () => {
@@ -155,8 +156,138 @@ const CheckoutPage = () => {
       }
     }
 
-    // TODO: Proceed to Payment Module
-    alert("Proceeding to payment module... (Coming soon)");
+    try {
+      const resLoaded = await loadRazorpayScript();
+      if (!resLoaded) {
+        alert('Razorpay SDK failed to load. Are you online?');
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      
+      // 1. Create Order on Backend
+      const orderPayload = {
+        items: cartItems,
+        shippingAddress: { ...address, addressType },
+        contactInformation: contact,
+        giftOptions,
+        orderNotes,
+        deliveryOption,
+        user: user._id
+      };
+
+      const orderResponse = await fetch(`${API_BASE}/payments/create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(orderPayload)
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderData.success) {
+        alert(orderData.message || 'Failed to create order');
+        return;
+      }
+
+      // 2. Open Razorpay Checkout
+      const options = {
+        key: orderData.key,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'RaHa Creations',
+        description: 'Order Payment',
+        order_id: orderData.razorpayOrderId,
+        handler: async function (response) {
+          try {
+            // 3. Verify Payment
+            const verifyRes = await fetch(`${API_BASE}/payments/verify`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_signature: response.razorpay_signature,
+                orderId: orderData.order._id
+              })
+            });
+
+            const verifyData = await verifyRes.json();
+            
+            if (verifyData.success) {
+              if (import.meta.env.VITE_PAYMENT_DEBUG === 'true') {
+                console.log('--- [Razorpay] Payment Success & Verified ---');
+                console.log('Order ID:', orderData.order._id);
+                console.log('Transaction ID:', response.razorpay_payment_id);
+              }
+              // Clear cart
+              localStorage.removeItem('cart');
+              
+              navigate('/payment-success', { 
+                state: { 
+                  orderNumber: orderData.order.orderNumber, 
+                  transactionId: response.razorpay_payment_id 
+                }
+              });
+            } else {
+              alert('Payment verification failed!');
+            }
+          } catch (err) {
+            console.error('Verify error:', err);
+            alert('Something went wrong during verification');
+          }
+        },
+        prefill: {
+          name: contact.fullName,
+          email: contact.email,
+          contact: contact.mobile
+        },
+        theme: {
+          color: '#e11d48'
+        },
+        modal: {
+          ondismiss: function() {
+            // Customer closed the popup. Order stays pending.
+            console.log('Customer closed payment popup');
+          }
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+
+      if (import.meta.env.VITE_PAYMENT_DEBUG === 'true') {
+        console.log('--- [Razorpay] Checkout Opened ---');
+        console.log('Options:', options);
+      }
+
+      rzp.on('payment.failed', function (response){
+        if (import.meta.env.VITE_PAYMENT_DEBUG === 'true') {
+          console.error("--- [Razorpay] Payment Failed ---", response);
+          console.error({
+              code: response.error?.code,
+              description: response.error?.description,
+              source: response.error?.source,
+              step: response.error?.step,
+              reason: response.error?.reason,
+              metadata: response.error?.metadata
+          });
+        }
+        
+        // Detailed Alert
+        alert(`Payment Failed\n\nReason: ${response.error?.reason || 'Unknown'}\nDescription: ${response.error?.description || 'No description available'}\nError Code: ${response.error?.code || 'N/A'}`);
+      });
+      
+      rzp.open();
+
+    } catch (err) {
+      console.error('Payment Flow Error:', err);
+      alert('An error occurred while initiating payment.');
+    }
   };
 
   return (

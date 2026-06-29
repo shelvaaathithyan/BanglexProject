@@ -11,6 +11,13 @@ const paymentSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  gateway: {
+    type: String,
+    default: 'Razorpay'
+  },
+  gatewayOrderId: String,
+  gatewayPaymentId: String,
+  gatewaySignature: String,
   amount: {
     type: Number,
     required: true
@@ -19,31 +26,31 @@ const paymentSchema = new mongoose.Schema({
     type: String,
     default: 'INR'
   },
+  paymentMethod: {
+    type: String, // E.g., 'UPI', 'Card', 'Net Banking', 'Wallet', 'COD'
+    required: true
+  },
   status: {
     type: String,
     enum: ['Completed', 'Pending', 'Failed', 'Refunded'],
     default: 'Pending'
   },
-  method: {
-    type: String,
-    enum: ['UPI', 'Card', 'Net Banking', 'Wallet', 'COD'],
-    required: true
-  },
-  gateway: {
-    type: String,
-    default: 'Razorpay'
-  },
-  gatewayOrderId: String,
-  gatewayPaymentId: String,
-  gatewaySignature: String,
-  paymentCapturedAt: Date,
-  paymentStatus: String, // E.g., 'captured', 'failed', 'authorized' from Razorpay
-  
+  capturedAt: Date,
   failureReason: String,
-  processingTimeMs: Number,
+  isRefunded: {
+    type: Boolean,
+    default: false
+  },
   refundAmount: {
     type: Number,
     default: 0
+  },
+  gatewayResponse: {
+    type: mongoose.Schema.Types.Mixed // Store raw webhook/API response for auditing
+  },
+  paymentAttempts: {
+    type: Number,
+    default: 1
   }
 }, { timestamps: true });
 

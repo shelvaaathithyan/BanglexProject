@@ -42,7 +42,7 @@ export default function PaymentsLedger() {
   const fetchStats = async () => {
     try {
       setLoadingStats(true);
-      const res = await fetch(`${API_BASE}/payments/stats`);
+      const res = await fetch(`${API_BASE}/payments/analytics`);
       if (res.ok) {
         const data = await res.json();
         setStats(data);

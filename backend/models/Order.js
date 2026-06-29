@@ -11,14 +11,10 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  totalAmount: {
-    type: Number,
-    required: true
-  },
-  status: {
-    type: String,
-    enum: ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled', 'Returned'],
-    default: 'Pending'
+  contactInformation: {
+    fullName: String,
+    email: String,
+    mobileNumber: String
   },
   shippingAddress: {
     houseNo: String,
@@ -27,15 +23,75 @@ const orderSchema = new mongoose.Schema({
     city: String,
     state: String,
     pincode: String,
-    landmark: String
+    landmark: String,
+    addressType: String
   },
-  products: [{
+  items: [{
     product: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Product'
     },
+    name: String,
+    price: Number,
     quantity: Number,
-    price: Number
+    size: String,
+    color: String,
+    image: String
+  }],
+  subtotal: {
+    type: Number,
+    required: true
+  },
+  shipping: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  gst: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  grandTotal: {
+    type: Number,
+    required: true
+  },
+  coupon: {
+    code: String,
+    discountAmount: Number
+  },
+  orderStatus: {
+    type: String,
+    enum: ['Pending Payment', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered', 'Cancelled', 'Returned'],
+    default: 'Pending Payment'
+  },
+  paymentStatus: {
+    type: String,
+    enum: ['Pending', 'Completed', 'Failed', 'Refunded'],
+    default: 'Pending'
+  },
+  payment: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Payment'
+  },
+  invoice: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Invoice'
+  },
+  giftOptions: {
+    wrap: Boolean,
+    message: Boolean,
+    messageText: String
+  },
+  orderNotes: String,
+  cancelReason: String,
+  timeline: [{
+    status: String,
+    timestamp: {
+      type: Date,
+      default: Date.now
+    },
+    note: String
   }]
 }, { timestamps: true });
 
