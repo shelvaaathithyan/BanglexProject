@@ -214,8 +214,17 @@ const CategoryPage = () => {
         );
         
         if (existingIndex > -1) {
-          currentCart[existingIndex].quantity += 1;
+          const prospectiveQty = currentCart[existingIndex].quantity + 1;
+          if (product && prospectiveQty > product.stock) {
+            alert(`Only ${product.stock} units are available in stock. You already have ${currentCart[existingIndex].quantity} in your cart.`);
+            return;
+          }
+          currentCart[existingIndex].quantity = prospectiveQty;
         } else {
+          if (product && product.stock <= 0) {
+            alert("This product is currently out of stock.");
+            return;
+          }
           currentCart.push({
             _id: product._id,
             name: product.name,
@@ -223,7 +232,8 @@ const CategoryPage = () => {
             image: product.images[0] || 'https://via.placeholder.com/300',
             size: selectedSize,
             color: selectedColor,
-            quantity: 1
+            quantity: 1,
+            stock: product.stock
           });
         }
         

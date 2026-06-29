@@ -77,9 +77,22 @@ router.get('/my-orders', async (req, res) => {
 router.post('/create-order', async (req, res) => {
   try {
     const { items, shippingAddress, contactInformation, giftOptions, orderNotes, deliveryOption, user } = req.body;
-    
-    // Verify we have a user (Assuming user ID is passed or from req.user auth middleware)
     if (!user) return res.status(401).json({ message: 'Unauthorized' });
+
+    // Verify product stock
+    for (const item of items) {
+      const productId = item.product || item._id;
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ success: false, message: `Product not found: ${item.name}` });
+      }
+      if (product.stock < item.quantity) {
+        return res.status(400).json({ 
+          success: false, 
+          message: `Only ${product.stock} units of "${product.name}" are available in stock. You requested ${item.quantity}.` 
+        });
+      }
+    }
 
     const { subtotal, shipping, gst, grandTotal } = await calculateAmounts(items, giftOptions, deliveryOption);
     const orderNumber = await generateOrderNumber();

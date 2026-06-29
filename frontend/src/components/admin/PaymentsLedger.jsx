@@ -238,7 +238,7 @@ export default function PaymentsLedger() {
                         </div>
                         <div style={{ display: 'flex', gap: '1rem' }}>
                           <span style={{ color: '#94a3b8' }}>{method.percentage}%</span>
-                          <span style={{ color: '#1e293b', fontWeight: 600, width: '60px', textAlign: 'right' }}>{formatCurrency(method.amount)}</span>
+                          <span style={{ color: '#1e293b', fontWeight: 600, width: '90px', textAlign: 'right' }}>{formatCurrency(method.amount)}</span>
                         </div>
                       </div>
                     ))}

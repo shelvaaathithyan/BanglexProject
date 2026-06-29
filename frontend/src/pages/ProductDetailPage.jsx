@@ -143,10 +143,21 @@ const ProductDetailPage = () => {
     window.dispatchEvent(new Event('savedLooksUpdated'));
   };
 
-  const incrementQty = () => setQuantity(prev => prev + 1);
+  const incrementQty = () => setQuantity(prev => {
+    if (product && prev >= product.stock) {
+      alert(`Only ${product.stock} units are available in stock.`);
+      return prev;
+    }
+    return prev + 1;
+  });
   const decrementQty = () => setQuantity(prev => prev > 1 ? prev - 1 : 1);
 
   const handleAddToCart = () => {
+    if (product && product.stock <= 0) {
+      alert("This product is currently out of stock.");
+      return;
+    }
+
     const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
     const festivalDiscounted = activeFestival && product ? getFestivalPrice(product.price, activeFestival) : null;
     const unitPrice = festivalDiscounted !== null && festivalDiscounted < product.price 
@@ -157,8 +168,17 @@ const ProductDetailPage = () => {
     );
     
     if (existingIndex > -1) {
-      currentCart[existingIndex].quantity += quantity;
+      const prospectiveQty = currentCart[existingIndex].quantity + quantity;
+      if (product && prospectiveQty > product.stock) {
+        alert(`Only ${product.stock} units are available in stock. You already have ${currentCart[existingIndex].quantity} in your cart.`);
+        return;
+      }
+      currentCart[existingIndex].quantity = prospectiveQty;
     } else {
+      if (product && quantity > product.stock) {
+        alert(`Only ${product.stock} units are available in stock.`);
+        return;
+      }
       currentCart.push({
         _id: product._id,
         name: product.name,
@@ -166,7 +186,8 @@ const ProductDetailPage = () => {
         image: product.images[selectedImageIndex] || product.images[0] || 'https://via.placeholder.com/300',
         size: selectedSize,
         color: selectedColor,
-        quantity: quantity
+        quantity: quantity,
+        stock: product.stock // Carry stock property for easy checks
       });
     }
     

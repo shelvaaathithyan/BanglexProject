@@ -231,6 +231,11 @@ const Navbar = () => {
     if (newQty <= 0) {
       currentCart.splice(index, 1);
     } else {
+      const item = currentCart[index];
+      if (item.stock !== undefined && newQty > item.stock) {
+        alert(`Only ${item.stock} units are available in stock for "${item.name}".`);
+        return;
+      }
       currentCart[index].quantity = newQty;
     }
     localStorage.setItem('cart', JSON.stringify(currentCart));
