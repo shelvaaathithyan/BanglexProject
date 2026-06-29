@@ -237,11 +237,23 @@ router.put('/profile', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const { firstName, lastName, address } = req.body;
+    const { firstName, lastName, address, mobileNumber, addresses } = req.body;
     
+    // Validate addresses length if provided
+    if (addresses && addresses.length > 3) {
+      return res.status(400).json({ message: 'You can only save up to 3 addresses.' });
+    }
+
+    const updateFields = {};
+    if (firstName !== undefined) updateFields.firstName = firstName;
+    if (lastName !== undefined) updateFields.lastName = lastName;
+    if (address !== undefined) updateFields.address = address;
+    if (mobileNumber !== undefined) updateFields.mobileNumber = mobileNumber;
+    if (addresses !== undefined) updateFields.addresses = addresses;
+
     const user = await User.findByIdAndUpdate(
       decoded.id,
-      { $set: { firstName, lastName, address } },
+      { $set: updateFields },
       { new: true }
     ).select('-password');
     

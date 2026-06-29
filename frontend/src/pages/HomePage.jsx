@@ -5,6 +5,8 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import gsap from 'gsap';
 import API_BASE from '../config/api';
+import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
+
 const HomePage = () => {
   const [popularProducts, setPopularProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -172,7 +174,10 @@ const HomePage = () => {
         
         // Update actual cart state
         const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const unitPrice = product.isOnSale && product.salePrice ? product.salePrice : product.price;
+        const festivalDiscounted = activeFestival ? getFestivalPrice(product.price, activeFestival) : null;
+        const unitPrice = festivalDiscounted !== null && festivalDiscounted < product.price 
+          ? festivalDiscounted 
+          : (product.isOnSale && product.salePrice ? product.salePrice : product.price);
         const selectedSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'Free Size';
         const selectedColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Default';
         

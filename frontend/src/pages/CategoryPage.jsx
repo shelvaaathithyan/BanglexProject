@@ -202,7 +202,10 @@ const CategoryPage = () => {
         
         // Update actual cart state
         const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
-        const unitPrice = product.isOnSale && product.salePrice ? product.salePrice : product.price;
+        const festivalDiscounted = activeFestival ? getFestivalPrice(product.price, activeFestival) : null;
+        const unitPrice = festivalDiscounted !== null && festivalDiscounted < product.price 
+          ? festivalDiscounted 
+          : (product.isOnSale && product.salePrice ? product.salePrice : product.price);
         const selectedSize = product.sizes && product.sizes.length > 0 ? product.sizes[0] : 'Free Size';
         const selectedColor = product.colors && product.colors.length > 0 ? product.colors[0] : 'Default';
         

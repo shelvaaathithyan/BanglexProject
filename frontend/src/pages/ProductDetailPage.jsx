@@ -148,7 +148,10 @@ const ProductDetailPage = () => {
 
   const handleAddToCart = () => {
     const currentCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const unitPrice = product.isOnSale && product.salePrice ? product.salePrice : product.price;
+    const festivalDiscounted = activeFestival && product ? getFestivalPrice(product.price, activeFestival) : null;
+    const unitPrice = festivalDiscounted !== null && festivalDiscounted < product.price 
+      ? festivalDiscounted 
+      : (product.isOnSale && product.salePrice ? product.salePrice : product.price);
     const existingIndex = currentCart.findIndex(
       item => item._id === product._id && item.size === selectedSize && item.color === selectedColor
     );

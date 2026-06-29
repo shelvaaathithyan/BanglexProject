@@ -28,9 +28,27 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  mobileNumber: {
+    type: String,
+    trim: true
+  },
   address: {
     type: String
   },
+  addresses: [{
+    houseNo: String,
+    street: String,
+    area: String,
+    city: String,
+    state: String,
+    pincode: String,
+    landmark: String,
+    addressType: {
+      type: String,
+      enum: ['Home', 'Work', 'Other'],
+      default: 'Home'
+    }
+  }],
   role: {
     type: String,
     enum: ['user', 'admin'],

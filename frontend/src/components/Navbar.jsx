@@ -741,7 +741,7 @@ const Navbar = () => {
                     ? "🎉 You qualify for FREE shipping!" 
                     : `Add Rs. ${(999 - calculateSubtotal()).toFixed(2)} more for FREE shipping!`}
                 </p>
-                <button className="btn-checkout" onClick={() => alert('Proceeding to checkout! (Demo purpose)')}>
+                <button className="btn-checkout" onClick={() => { setIsCartOpen(false); navigate('/checkout'); }}>
                   Check out
                 </button>
               </div>
