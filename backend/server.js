@@ -12,6 +12,7 @@ const Product = require('./models/Product');
 const productRoutes = require('./routes/products');
 const categoryRoutes = require('./routes/categories');
 const festivalRoutes = require('./routes/festivals');
+const paymentRoutes = require('./routes/payments');
 const app = express();
 
 // Middleware
@@ -913,6 +914,7 @@ app.use('/auth', authRoutes);
 app.use('/products', productRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/festivals', festivalRoutes);
+app.use('/payments', paymentRoutes);
 
 app.get('/', (req, res) => {
   res.send('Banglex API is running...');

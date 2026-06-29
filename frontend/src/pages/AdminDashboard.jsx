@@ -15,6 +15,7 @@ import {
   PieChart, Pie, Cell
 } from 'recharts';
 import API_BASE from '../config/api';
+import PaymentsLedger from '../components/admin/PaymentsLedger';
 
 const mockCategories = [
   { id: 1, name: 'Glass Bangles', desc: 'Traditional and designer glass bangles', products: 45, status: 'Active' },
@@ -703,7 +704,9 @@ const AdminDashboard = () => {
 
           <div className="admin-nav-group">
             <div className="admin-nav-group-title">Operations</div>
-            <button className="admin-nav-item"><div className="admin-nav-item-left"><CreditCard size={18} /> Payments Ledger</div></button>
+            <button className={`admin-nav-item ${activeTab === 'payments' ? 'active' : ''}`} onClick={() => setActiveTab('payments')} style={{ background: activeTab === 'payments' ? '#e11d48' : 'transparent', color: activeTab === 'payments' ? 'white' : '#94a3b8' }}>
+              <div className="admin-nav-item-left"><CreditCard size={18} /> Payments Ledger</div>
+            </button>
             <button className="admin-nav-item"><div className="admin-nav-item-left"><Archive size={18} /> Inventory Control</div></button>
           </div>
 
@@ -1600,6 +1603,10 @@ const AdminDashboard = () => {
                 </button>
               </div>
             </div>
+          )}
+
+          {activeTab === 'payments' && (
+            <PaymentsLedger />
           )}
 
           <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem', marginTop: '1rem' }}>
