@@ -915,6 +915,7 @@ app.use('/products', productRoutes);
 app.use('/categories', categoryRoutes);
 app.use('/festivals', festivalRoutes);
 app.use('/payments', paymentRoutes);
+app.use('/notifications', require('./routes/notifications'));
 
 app.get('/', (req, res) => {
   res.send('Banglex API is running...');

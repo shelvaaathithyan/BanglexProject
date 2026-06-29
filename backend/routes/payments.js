@@ -7,6 +7,7 @@ const Payment = require('../models/Payment');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const Invoice = require('../models/Invoice');
+const Notification = require('../models/Notification');
 const { razorpay, verifySignature, verifyWebhookSignature } = require('../utils/razorpay');
 
 // Helper to calculate amounts securely
@@ -206,7 +207,26 @@ router.post('/verify', async (req, res) => {
     // 1. Generate Invoice Number
     const invoiceNumber = await generateInvoiceNumber();
 
-    // 2. Create Payment Record
+    // 2. Fetch payment details from Razorpay to get the actual method
+    let actualPaymentMethod = 'Online';
+    try {
+      const rzpPayment = await razorpay.payments.fetch(razorpay_payment_id);
+      if (rzpPayment && rzpPayment.method) {
+        const methodMap = {
+          'upi': 'UPI',
+          'card': 'Card',
+          'netbanking': 'Netbanking',
+          'wallet': 'Wallet',
+          'emi': 'EMI',
+          'paylater': 'Paylater'
+        };
+        actualPaymentMethod = methodMap[rzpPayment.method] || rzpPayment.method.charAt(0).toUpperCase() + rzpPayment.method.slice(1);
+      }
+    } catch (fetchErr) {
+      console.error('Error fetching payment details from Razorpay:', fetchErr);
+    }
+
+    // 3. Create Payment Record
     const payment = new Payment({
       order: order._id,
       user: order.user,
@@ -215,7 +235,7 @@ router.post('/verify', async (req, res) => {
       gatewayPaymentId: razorpay_payment_id,
       gatewaySignature: razorpay_signature,
       status: 'Completed',
-      paymentMethod: 'Online', // This would ideally be fetched from Razorpay API payment details, assuming Online for now
+      paymentMethod: actualPaymentMethod,
       capturedAt: new Date()
     });
     await payment.save({ session });
@@ -245,14 +265,26 @@ router.post('/verify', async (req, res) => {
     order.timeline.push({ status: 'Confirmed', note: 'Order confirmed and sent for processing.' });
     await order.save({ session });
 
-    // 5. Reduce Inventory
+    // 5. Reduce Inventory and generate notification
+    let notificationMsg = `Order Details:\nOrder #: ${order.orderNumber}\nAmount: ₹${order.grandTotal}\n\nInventory Updates:\n`;
     for (const item of order.items) {
-      await Product.findByIdAndUpdate(
+      const updatedProduct = await Product.findByIdAndUpdate(
         item.product,
         { $inc: { stock: -item.quantity } },
-        { session }
+        { session, new: true }
       );
+      if (updatedProduct) {
+        notificationMsg += `- ${updatedProduct.name}: Decreased by ${item.quantity}. Current stock: ${updatedProduct.stock}\n`;
+      }
     }
+    
+    // Create Notification for Admin
+    const notification = new Notification({
+      title: 'New Order!!',
+      message: notificationMsg,
+      type: 'ORDER'
+    });
+    await notification.save({ session });
 
     await session.commitTransaction();
     session.endSession();

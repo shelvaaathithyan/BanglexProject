@@ -231,10 +231,10 @@ export default function PaymentsLedger() {
                   </div>
                   <div style={{ flex: 1, marginLeft: '1rem' }}>
                     {stats.methodDistribution.map((method, i) => (
-                      <div key={method.method} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: COLORS[i % COLORS.length] }}></div>
-                          <span style={{ color: '#334155', fontWeight: 500 }}>{method.method}</span>
+                      <div key={method.method} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
+                          <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: COLORS[i % COLORS.length], flexShrink: 0 }}></div>
+                          <span style={{ color: '#334155', fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{method.method}</span>
                         </div>
                         <div style={{ display: 'flex', gap: '1rem' }}>
                           <span style={{ color: '#94a3b8' }}>{method.percentage}%</span>

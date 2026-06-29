@@ -145,6 +145,7 @@ const AdminDashboard = () => {
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [paymentOverview, setPaymentOverview] = useState([]);
 
   // Products Table State
@@ -600,10 +601,37 @@ const AdminDashboard = () => {
       }
     };
 
+    const fetchNotifications = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/notifications`);
+        if (res.ok) {
+          const data = await res.json();
+          setNotifications(data);
+        }
+      } catch (err) {
+        console.error('Failed to fetch notifications:', err);
+      }
+    };
+
     fetchProducts();
     fetchCategories();
     fetchFestivals();
+    fetchNotifications();
   }, []);
+
+  const handleNotifClick = async () => {
+    setIsNotifOpen(!isNotifOpen);
+    if (!isNotifOpen && notifications.some(n => !n.read)) {
+      try {
+        await fetch(`${API_BASE}/notifications/read-all`, { method: 'PUT' });
+        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      } catch (err) {
+        console.error('Failed to mark notifications read:', err);
+      }
+    }
+  };
+
+  const unreadNotifs = notifications.filter(n => !n.read).length;
 
   const promptDeleteFestival = (festival) => {
     setFestivalToDelete(festival);
@@ -754,9 +782,30 @@ const AdminDashboard = () => {
               Visit Store <ExternalLink size={14} />
             </a>
             
-            <div className="admin-notification">
-              <Bell size={20} />
-              <div className="admin-notification-badge">5</div>
+            <div className="admin-notification" style={{ position: 'relative' }}>
+              <Bell size={20} style={{ cursor: 'pointer' }} onClick={handleNotifClick} />
+              {unreadNotifs > 0 && <div className="admin-notification-badge">{unreadNotifs}</div>}
+              
+              {isNotifOpen && (
+                <div style={{
+                  position: 'absolute', top: '120%', right: 0, width: '300px', background: 'white',
+                  border: '1px solid #e2e8f0', borderRadius: '8px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                  zIndex: 50, maxHeight: '400px', overflowY: 'auto'
+                }}>
+                  <div style={{ padding: '1rem', borderBottom: '1px solid #e2e8f0', fontWeight: 'bold' }}>Notifications</div>
+                  {notifications.length === 0 ? (
+                    <div style={{ padding: '1rem', color: '#64748b', textAlign: 'center' }}>No notifications</div>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n._id} style={{ padding: '1rem', borderBottom: '1px solid #e2e8f0', background: n.read ? 'white' : '#f8fafc' }}>
+                        <div style={{ fontWeight: '600', fontSize: '0.9rem' }}>{n.title}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.25rem', whiteSpace: 'pre-wrap' }}>{n.message}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8', marginTop: '0.5rem' }}>{new Date(n.createdAt).toLocaleString()}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="admin-profile">
