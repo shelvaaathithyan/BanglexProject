@@ -17,6 +17,8 @@ import {
 import API_BASE from '../config/api';
 import PaymentsLedger from '../components/admin/PaymentsLedger';
 import InventoryControl from '../components/admin/InventoryControl';
+import BroadcastManager from '../components/admin/BroadcastManager';
+import { useNotification } from '../context/NotificationContext';
 
 const mockCategories = [
   { id: 1, name: 'Glass Bangles', desc: 'Traditional and designer glass bangles', products: 45, status: 'Active' },
@@ -125,6 +127,7 @@ const SearchableDropdown = ({ options, name, value = [], onChange, placeholder, 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const navigate = useNavigate();
+  const { socket } = useNotification();
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -776,7 +779,7 @@ const AdminDashboard = () => {
             <button className="admin-nav-item"><div className="admin-nav-item-left"><Users size={18} /> Customers Portal</div> <ChevronRight /></button>
             <button className="admin-nav-item"><div className="admin-nav-item-left"><Tag size={18} /> Coupons & Referrals</div> <ChevronRight /></button>
             <button className="admin-nav-item"><div className="admin-nav-item-left"><Star size={18} /> Reviews Management</div> <ChevronRight /></button>
-            <button className="admin-nav-item"><div className="admin-nav-item-left"><Radio size={18} /> Broadcast Notifications</div></button>
+            <button className={`admin-nav-item ${activeTab === 'broadcast' ? 'active' : ''}`} onClick={() => setActiveTab('broadcast')} style={{ background: activeTab === 'broadcast' ? '#e11d48' : 'transparent', color: activeTab === 'broadcast' ? 'white' : '#94a3b8' }}><div className="admin-nav-item-left"><Radio size={18} /> Broadcast Notifications</div></button>
           </div>
 
           <div className="admin-nav-group">
@@ -1705,6 +1708,10 @@ const AdminDashboard = () => {
 
           {activeTab === 'inventory-control' && (
             <InventoryControl />
+          )}
+
+          {activeTab === 'broadcast' && (
+            <BroadcastManager socket={socket} />
           )}
 
           <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem', marginTop: '1rem' }}>

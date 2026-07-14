@@ -1,16 +1,76 @@
-# React + Vite
+# BanglexProject Frontend (AI Bangle Size Finder)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for **Banglex**, an AI-powered platform designed to help users find their perfect bangle size. By utilizing computer vision and hand-tracking AI, this application allows users to measure their hand seamlessly through their device's camera—no physical measurements or guessing required.
 
-Currently, two official plugins are available:
+## ✨ Key Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **AI Hand Tracking**: Real-time hand analysis powered by [MediaPipe Hand Tracking](https://developers.google.com/mediapipe/solutions/vision/hand_landmarker).
+- **Interactive Size Finder**: A highly engaging UI flow that guides users to get an accurate bangle size recommendation in seconds.
+- **Fluid Animations & Transitions**: Smooth and dynamic animations built with [Framer Motion](https://www.framer.com/motion/) and [GSAP](https://gsap.com/).
+- **Privacy First**: Secure processing where all camera feeds are analyzed locally; no visual data is stored.
+- **Data Visualizations**: Analytics components using [Recharts](https://recharts.org/).
 
-## React Compiler
+## 🚀 Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Core**: [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **AI/CV**: `@mediapipe/camera_utils`, `@mediapipe/hands`
+- **Animations**: `framer-motion`, `gsap`
+- **Charting**: `recharts`
+- **Icons**: `lucide-react`, `react-icons`
+- **Routing**: `react-router-dom`
 
-## Expanding the ESLint configuration
+## 📂 Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- `/src/components`: UI components including the `sizeFinder` module (`Hero`, `ModeStep`, `PermissionScreen`).
+- `/src/pages`: Main routing views for the application.
+- `/src/utils`: Utilities for computer vision and general helpers.
+- `/public`: Static assets, images, and fonts.
+
+## 🛠️ Getting Started
+
+### Prerequisites
+
+Ensure you have [Node.js](https://nodejs.org/) installed on your machine.
+
+### Installation
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd BanglexProject/frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+### Development Server
+
+Run the following command to start the local development server:
+
+```bash
+npm run dev
+```
+
+Open the provided localhost URL (e.g., [http://localhost:5173](http://localhost:5173)) in your browser to view the application. Ensure your browser has camera permissions enabled to test the AI scanner.
+
+### Building for Production
+
+To create a production-ready build, run:
+
+```bash
+npm run build
+```
+
+This will output the static assets to the `/dist` directory. You can preview the production build using:
+
+```bash
+npm run preview
+```
+
+## 🤝 Contributing
+
+When contributing to this repository, please ensure that any updates to the camera logic or UI maintain the focus on user privacy (no images are uploaded to the backend).
+
+## 📄 License
+
+This project is proprietary and confidential. Unauthorized copying of this file, via any medium, is strictly prohibited.

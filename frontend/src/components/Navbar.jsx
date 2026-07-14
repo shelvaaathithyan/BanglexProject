@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Search, User, ShoppingBag, Menu, X, LogOut, Plus, Minus, Sparkles, Gift } from 'lucide-react';
 import API_BASE from '../config/api';
 import { isFestivalActive } from '../utils/festivalPrice';
+import { useNotification } from '../context/NotificationContext';
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -27,9 +28,7 @@ const Navbar = () => {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [cartItems, setCartItems] = useState([]);
 
-  // Festival States
-  const [activeFestival, setActiveFestival] = useState(null);
-  const [festivalNotifDismissed, setFestivalNotifDismissed] = useState(false);
+  const { activeFestival } = useNotification();
 
   const fetchProfileStatus = async () => {
     const token = localStorage.getItem('token');
@@ -118,37 +117,7 @@ const Navbar = () => {
     };
   }, []);
 
-  // Fetch active festival and check expiration
-  useEffect(() => {
-    const fetchActiveFestival = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/festivals/active`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data && isFestivalActive(data)) {
-            setActiveFestival(data);
-          }
-        }
-      } catch (err) {
-        console.error('Error fetching active festival:', err);
-      }
-    };
-    fetchActiveFestival();
-
-    // Check every minute if the festival has expired or started
-    const interval = setInterval(() => {
-      // If we don't have one active, maybe we should refetch? Or we can just let it be null until a page refresh.
-      // But if we already have it in state, we should clear it when it expires:
-      if (activeFestival) {
-        if (!isFestivalActive(activeFestival)) {
-          setActiveFestival(null);
-        }
-      } else {
-         fetchActiveFestival();
-      }
-    }, 60000);
-    return () => clearInterval(interval);
-  }, [activeFestival]);
+  // Active festival fetch moved to NotificationContext
 
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -800,28 +769,7 @@ const Navbar = () => {
         </>
       )}
 
-      {/* Festival Side Notification */}
-      {activeFestival && !activeFestival.isDown && isLoggedIn && !festivalNotifDismissed && (
-        <div className="festival-side-notification">
-          <button className="festival-notif-close" onClick={() => setFestivalNotifDismissed(true)} aria-label="Close notification">
-            <X size={16} />
-          </button>
-          <div className="festival-notif-icon">
-            <Gift size={28} color="#d4af37" />
-          </div>
-          <div className="festival-notif-content" style={{ fontFamily: "'Poppins', sans-serif" }}>
-            <span className="festival-name-golden" style={{ fontSize: '1.1rem', fontWeight: 700 }}>{activeFestival.name}</span>
-            <p style={{ margin: '0.35rem 0 0', fontSize: '0.9rem', color: '#1e293b', lineHeight: 1.4 }}>
-              Get <strong>{activeFestival.discountValue}{activeFestival.discountType === 'Percentage (%)' ? '%' : '₹'}</strong> OFF on {activeFestival.applyTo === 'All Products' ? 'all products' : 'selected items'}!
-            </p>
-            {activeFestival.endDate && (
-              <p style={{ margin: '0.35rem 0 0', fontSize: '0.75rem', color: '#64748b' }}>
-                Ends: {new Date(`${activeFestival.endDate}T${activeFestival.endTime || '23:59'}`).toLocaleString()}
-              </p>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Festival Side Notification moved to NotificationContainer */}
     </>
   );
 };

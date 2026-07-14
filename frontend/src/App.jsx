@@ -9,12 +9,16 @@ import FestivalOfferPage from './pages/FestivalOfferPage';
 import SizeFinder from './pages/SizeFinder';
 import CheckoutPage from './pages/CheckoutPage';
 import PaymentSuccessPage from './pages/PaymentSuccessPage';
+import { NotificationProvider } from './context/NotificationContext';
+import NotificationContainer from './components/notifications/NotificationContainer';
 import './index.css';
 
 function App() {
   return (
-    <Router>
-      <Routes>
+    <NotificationProvider>
+      <Router>
+        <NotificationContainer />
+        <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/home" element={<HomePage />} />
         <Route path="/offer" element={<FestivalOfferPage />} />
@@ -27,8 +31,9 @@ function App() {
         <Route path="/checkout" element={<CheckoutPage />} />
         <Route path="/payment-success" element={<PaymentSuccessPage />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </Router>
+        </Routes>
+      </Router>
+    </NotificationProvider>
   );
 }
 

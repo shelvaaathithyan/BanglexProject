@@ -11,7 +11,8 @@ const cors = require('cors');
 const passport = require('passport');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
-
+const http = require('http');
+const { Server } = require('socket.io');
 const authRoutes = require('./routes/auth');
 const User = require('./models/User');
 const Product = require('./models/Product');
@@ -22,6 +23,29 @@ const paymentRoutes = require('./routes/payments');
 const inventoryRoutes = require('./routes/inventory');
 const { initRedis } = require('./config/redis');
 const app = express();
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    credentials: true
+  }
+});
+app.set('io', io);
+
+const notificationManager = require('./services/NotificationManager');
+notificationManager.setIo(io);
+
+io.on('connection', (socket) => {
+  console.log('Client connected to Socket.IO:', socket.id);
+  // Send current queue immediately on connection
+  socket.emit('notification_sync', notificationManager.getNotificationQueue());
+  
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
+  });
+});
 
 // Initialize Redis
 initRedis();
@@ -928,6 +952,7 @@ app.use('/festivals', festivalRoutes);
 app.use('/payments', paymentRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/notifications', require('./routes/notifications'));
+app.use('/broadcasts', require('./routes/broadcasts'));
 
 app.get('/', (req, res) => {
   res.send('Banglex API is running...');
@@ -935,7 +960,7 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
