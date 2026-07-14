@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import API_BASE from '../config/api';
+import ReviewModal from '../components/reviews/ReviewModal';
 import { User, MapPin, Mail, ShoppingBag, Package, Heart, Paintbrush, ShoppingCart, Star, LogOut } from 'lucide-react';
 
 const UserDashboard = () => {
@@ -25,6 +26,15 @@ const UserDashboard = () => {
     houseNo: '', street: '', area: '', city: '', state: '', pincode: '', landmark: '', addressType: 'Home'
   });
   const navigate = useNavigate();
+
+  // Review Modal State
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
+  const [reviewContext, setReviewContext] = useState({ productId: null, orderId: null, productName: '' });
+
+  const openReviewModal = (productId, orderId, productName) => {
+    setReviewContext({ productId, orderId, productName });
+    setIsReviewModalOpen(true);
+  };
 
   useEffect(() => {
     // Load cart
@@ -138,6 +148,9 @@ const UserDashboard = () => {
 
     fetchUser();
     fetchOrders();
+
+    window.addEventListener('reviewSubmitted', fetchOrders);
+    return () => window.removeEventListener('reviewSubmitted', fetchOrders);
   }, []);
 
   const handleChange = (e) => {
@@ -418,7 +431,15 @@ const UserDashboard = () => {
                                 )}
                                 <div>
                                   <div style={{ fontWeight: '500' }}>{item.product ? item.product.name : 'Unknown Product'}</div>
-                                  <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Qty: {item.quantity} | Size: {item.size}</div>
+                                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.5rem' }}>Qty: {item.quantity} | Size: {item.size}</div>
+                                  {order.orderStatus === 'Delivered' && item.product && (
+                                    <OrderReviewButton 
+                                      productId={item.product._id} 
+                                      orderId={order._id} 
+                                      productName={item.product.name} 
+                                      onOpenModal={openReviewModal} 
+                                    />
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -636,8 +657,60 @@ const UserDashboard = () => {
         )}
       </main>
       <Footer />
+      
+      <ReviewModal 
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        productId={reviewContext.productId}
+        orderId={reviewContext.orderId}
+        productName={reviewContext.productName}
+        onSuccess={() => window.dispatchEvent(new Event('reviewSubmitted'))}
+      />
     </div>
   );
 };
 
 export default UserDashboard;
+
+// Helper component for the Write Review button
+const OrderReviewButton = ({ productId, orderId, productName, onOpenModal }) => {
+  const [canReview, setCanReview] = useState(false);
+  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const checkReviewStatus = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/api/reviews/product/${productId}/can-review?orderId=${orderId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.canReview) {
+             setCanReview(true);
+          } else if (data.alreadyReviewed) {
+             setAlreadyReviewed(true);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkReviewStatus();
+  }, [productId, orderId]);
+
+  if (loading) return null;
+  
+  if (alreadyReviewed) {
+    return <button disabled style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #e2e8f0', backgroundColor: '#f1f5f9', color: '#94a3b8', cursor: 'not-allowed' }}>Review Submitted</button>;
+  }
+
+  if (canReview) {
+    return <button onClick={() => onOpenModal(productId, orderId, productName)} style={{ padding: '0.4rem 0.75rem', fontSize: '0.75rem', borderRadius: '4px', border: '1px solid #3b82f6', backgroundColor: '#eff6ff', color: '#3b82f6', cursor: 'pointer', fontWeight: 500, transition: 'all 0.2s' }}>Write Review</button>;
+  }
+
+  return null;
+};

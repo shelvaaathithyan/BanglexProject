@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Share2, Plus, Minus, Star, Truck, Heart, ShoppingCart, Zap, X } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ProductReviews from '../components/reviews/ProductReviews';
 import API_BASE from '../config/api';
 import { getFestivalPrice, isFestivalActive } from '../utils/festivalPrice';
 
@@ -445,6 +446,10 @@ const ProductDetailPage = () => {
           </div>
         </div>
       )}
+
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 20px' }}>
+        <ProductReviews productId={productId} />
+      </div>
 
       <Footer />
 

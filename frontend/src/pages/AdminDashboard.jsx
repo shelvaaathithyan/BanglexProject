@@ -18,6 +18,7 @@ import API_BASE from '../config/api';
 import PaymentsLedger from '../components/admin/PaymentsLedger';
 import InventoryControl from '../components/admin/InventoryControl';
 import BroadcastManager from '../components/admin/BroadcastManager';
+import ReviewsManager from '../components/admin/ReviewsManager';
 import { useNotification } from '../context/NotificationContext';
 
 const mockCategories = [
@@ -778,7 +779,7 @@ const AdminDashboard = () => {
             <div className="admin-nav-group-title">Customers & Marketing</div>
             <button className="admin-nav-item"><div className="admin-nav-item-left"><Users size={18} /> Customers Portal</div> <ChevronRight /></button>
             <button className="admin-nav-item"><div className="admin-nav-item-left"><Tag size={18} /> Coupons & Referrals</div> <ChevronRight /></button>
-            <button className="admin-nav-item"><div className="admin-nav-item-left"><Star size={18} /> Reviews Management</div> <ChevronRight /></button>
+            <button className={`admin-nav-item ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')} style={{ background: activeTab === 'reviews' ? '#e11d48' : 'transparent', color: activeTab === 'reviews' ? 'white' : '#94a3b8' }}><div className="admin-nav-item-left"><Star size={18} /> Reviews Management</div></button>
             <button className={`admin-nav-item ${activeTab === 'broadcast' ? 'active' : ''}`} onClick={() => setActiveTab('broadcast')} style={{ background: activeTab === 'broadcast' ? '#e11d48' : 'transparent', color: activeTab === 'broadcast' ? 'white' : '#94a3b8' }}><div className="admin-nav-item-left"><Radio size={18} /> Broadcast Notifications</div></button>
           </div>
 
@@ -1712,6 +1713,12 @@ const AdminDashboard = () => {
 
           {activeTab === 'broadcast' && (
             <BroadcastManager socket={socket} />
+          )}
+
+          {activeTab === 'reviews' && (
+            <div className="admin-tab-view" style={{ backgroundColor: '#f8fafc', padding: 0 }}>
+              <ReviewsManager />
+            </div>
           )}
 
           <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '0.75rem', marginTop: '1rem' }}>

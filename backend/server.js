@@ -953,6 +953,7 @@ app.use('/payments', paymentRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/notifications', require('./routes/notifications'));
 app.use('/broadcasts', require('./routes/broadcasts'));
+app.use('/api/reviews', require('./routes/reviews'));
 
 app.get('/', (req, res) => {
   res.send('Banglex API is running...');
