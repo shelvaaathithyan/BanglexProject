@@ -35,7 +35,7 @@ const sendEmail = async (to, subject, text) => {
   if (!transporter) await setupMailer();
   
   let info = await transporter.sendMail({
-    from: '"Banglex App" <noreply@banglex.com>',
+    from: `"RaHa Creations" <${process.env.EMAIL_USER || 'banglexproject@gmail.com'}>`,
     to,
     subject,
     text

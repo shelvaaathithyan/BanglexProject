@@ -117,7 +117,21 @@ router.post('/login', async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ message: 'Invalid Credentials' });
     
-    if (!user.isVerified) return res.status(400).json({ message: 'Please verify your email first', needsVerification: true });
+    if (!user.isVerified) {
+      // Resend verification OTP
+      const otp = generateOtp();
+      user.verificationOtp = otp;
+      user.verificationOtpExpiry = Date.now() + 10 * 60 * 1000;
+      await user.save();
+
+      console.log(`\n=============================================`);
+      console.log(`🔑 LOGIN RESEND OTP FOR ${email}: ${otp}`);
+      console.log(`=============================================\n`);
+
+      await sendEmail(email, 'Verify your Banglex account', `Your verification code is: ${otp}\nThis code is valid for 10 minutes.`);
+
+      return res.status(400).json({ message: 'Please verify your email first. A new OTP has been sent.', needsVerification: true });
+    }
 
     const isMatch = await user.validatePassword(password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid Credentials' });
