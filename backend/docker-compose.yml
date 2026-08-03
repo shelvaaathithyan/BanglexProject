@@ -1,0 +1,14 @@
+services:
+backend:
+...
+
+frontend:
+build: ./frontend
+ports:
+- "80:80"
+restart: unless-stopped
+depends_on:
+- backend
+
+redis:
+...
