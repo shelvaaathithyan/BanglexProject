@@ -340,9 +340,6 @@ const LoginSignup = () => {
           <button type="button" className="btn-social" onClick={handleGoogleLogin}>
             <img src="https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg" alt="Google" />
           </button>
-          <button type="button" className="btn-social" onClick={() => setIsWhatsAppLogin(true)}>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" />
-          </button>
         </div>
       </form>
     );
