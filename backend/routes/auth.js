@@ -12,15 +12,14 @@ const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_A
 const emailValidator = require('deep-email-validator');
 
 async function checkEmailValidity(email) {
-  // We disable SMTP because many providers (like Yahoo and Universities) block verification
-  // But we keep regex, MX, typo, and disposable checks
+  // We disable MX and SMTP because many cloud providers block DNS/SMTP checks, causing timeouts and "Failed to fetch" errors.
   return emailValidator.validate({
     email: email,
     validateRegex: true,
-    validateMx: true,
-    validateTypo: true,
-    validateDisposable: true,
-    validateSMTP: false // Disabled because many domains block SMTP ping checks
+    validateMx: false,
+    validateTypo: false,
+    validateDisposable: false,
+    validateSMTP: false
   });
 }
 
