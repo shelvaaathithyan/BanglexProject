@@ -12,15 +12,8 @@ const twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_A
 const emailValidator = require('deep-email-validator');
 
 async function checkEmailValidity(email) {
-  // We disable MX and SMTP because many cloud providers block DNS/SMTP checks, causing timeouts and "Failed to fetch" errors.
-  return emailValidator.validate({
-    email: email,
-    validateRegex: true,
-    validateMx: false,
-    validateTypo: false,
-    validateDisposable: false,
-    validateSMTP: false
-  });
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return { valid: emailRegex.test(email) };
 }
 
 const generateToken = (user) => {
