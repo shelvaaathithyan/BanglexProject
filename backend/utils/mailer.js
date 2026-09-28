@@ -14,7 +14,17 @@ async function setupMailer() {
     });
     console.log('Nodemailer configured with provided Gmail credentials.');
   } else {
-    // Fallback to Ethereal Email for testing if no credentials are provided
+    // If not in development mode, we should throw an error to avoid silent failures
+    if (process.env.NODE_ENV === 'production' || !process.env.NODE_ENV) {
+      console.error('❌ ERROR: EMAIL_USER and EMAIL_PASS environment variables are missing.');
+      console.error('Email sending will fail. Please configure your .env file.');
+      // Still fallback to ethereal just so the app doesn't crash completely, but throw error in sendEmail
+      // Actually let's just let it be ethereal but warn loudly. 
+      // But to prevent the user from thinking it worked, let's not create transporter so it fails.
+      throw new Error("Missing EMAIL_USER and EMAIL_PASS environment variables in production");
+    }
+
+    // Fallback to Ethereal Email for testing if no credentials are provided (development only)
     let testAccount = await nodemailer.createTestAccount();
     transporter = nodemailer.createTransport({
       host: 'smtp.ethereal.email',
@@ -29,7 +39,7 @@ async function setupMailer() {
   }
 }
 
-setupMailer();
+setupMailer().catch(err => console.error("Mailer Setup Error:", err.message));
 
 const sendEmail = async (to, subject, text) => {
   if (!transporter) await setupMailer();
