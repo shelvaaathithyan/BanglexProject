@@ -29,7 +29,7 @@ const LoginSignup = () => {
       if (role === 'admin') {
         navigate('/admin-dashboard');
       } else {
-        navigate('/user-dashboard');
+        navigate('/home');
       }
     } else if (authError) {
       setError('Google Authentication Failed');
@@ -66,7 +66,7 @@ const LoginSignup = () => {
         if (data.user.role === 'admin' || formData.email.toLowerCase() === 'banglexproject@gmail.com') {
           navigate('/admin-dashboard');
         } else {
-          navigate('/user-dashboard');
+          navigate('/home');
         }
         return;
       }
@@ -92,7 +92,7 @@ const LoginSignup = () => {
       if (data.user.role === 'admin' || formData.email.toLowerCase() === 'banglexproject@gmail.com') {
         navigate('/admin-dashboard');
       } else {
-        navigate('/user-dashboard');
+        navigate('/home');
       }
     } catch (err) { setError(err.message); }
   };
@@ -116,7 +116,7 @@ const LoginSignup = () => {
       if (data.user.role === 'admin' || formData.email.toLowerCase() === 'banglexproject@gmail.com') {
         navigate('/admin-dashboard');
       } else {
-        navigate('/user-dashboard');
+        navigate('/home');
       }
     } catch (err) { setError(err.message); }
   };
@@ -189,7 +189,7 @@ const LoginSignup = () => {
       if (data.user.role === 'admin' || (data.user.email && data.user.email.toLowerCase() === 'banglexproject@gmail.com')) {
         navigate('/admin-dashboard');
       } else {
-        navigate('/user-dashboard');
+        navigate('/home');
       }
     } catch (err) { setError(err.message); }
   };
