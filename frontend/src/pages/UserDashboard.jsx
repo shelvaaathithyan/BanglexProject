@@ -396,7 +396,7 @@ const UserDashboard = () => {
                   {orders.length === 0 ? (
                     <div className="empty-orders">
                       <p>You haven't placed any orders yet.</p>
-                      <button className="btn-shop-now" onClick={() => navigate('/')}>Shop Now</button>
+                      <button className="btn-shop-now" onClick={() => navigate('/home')}>Shop Now</button>
                     </div>
                   ) : (
                     <div className="orders-list" style={{ marginTop: '1rem' }}>
@@ -457,7 +457,7 @@ const UserDashboard = () => {
                   {savedLooks.length === 0 ? (
                     <div className="empty-orders">
                       <p>You haven't saved any looks yet.</p>
-                      <button className="btn-shop-now" onClick={() => navigate('/')}>Discover Styles</button>
+                      <button className="btn-shop-now" onClick={() => navigate('/home')}>Discover Styles</button>
                     </div>
                   ) : (
                     <div className="saved-looks-grid" style={{ marginTop: '1rem' }}>
@@ -501,7 +501,7 @@ const UserDashboard = () => {
                   {cartItems.length === 0 ? (
                     <div className="empty-orders">
                       <p>Your cart is empty.</p>
-                      <button className="btn-shop-now" onClick={() => navigate('/')}>Shop Now</button>
+                      <button className="btn-shop-now" onClick={() => navigate('/home')}>Shop Now</button>
                     </div>
                   ) : (
                     <div className="cart-content" style={{ marginTop: '1rem' }}>
