@@ -142,16 +142,26 @@ const AdminDashboard = () => {
     navigate('/login');
   };
 
-  // Data state (empty for now, to be fetched from API later)
+  // Data state (fetched from API)
   const [revenueData, setRevenueData] = useState([]);
   const [churnData, setChurnData] = useState([]);
   const [categoryData, setCategoryData] = useState([]);
   const [recentOrders, setRecentOrders] = useState([]);
+  const [allOrdersList, setAllOrdersList] = useState([]);
   const [lowStockAlerts, setLowStockAlerts] = useState([]);
   const [topProducts, setTopProducts] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [paymentOverview, setPaymentOverview] = useState([]);
+  // Dashboard stats
+  const [dashStats, setDashStats] = useState({ todayOrders: 0, revenueToday: 0, pendingOrders: 0, totalCustomers: 0, lowStockCount: 0 });
+  // Orders Modal
+  const [isOrdersModalOpen, setIsOrdersModalOpen] = useState(false);
+  const [ordersModalFilter, setOrdersModalFilter] = useState('All');
+  const [ordersModalSearch, setOrdersModalSearch] = useState('');
+  const [selectedOrderForTracking, setSelectedOrderForTracking] = useState(null);
+  const [trackingForm, setTrackingForm] = useState({ orderStatus: '', note: '' });
+  const [trackingLoading, setTrackingLoading] = useState(false);
 
   // Products Table State
   const [allProducts, setAllProducts] = useState([]);
@@ -618,11 +628,74 @@ const AdminDashboard = () => {
       }
     };
 
+    const fetchDashboardOrders = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/payments/admin/all-orders?limit=5`);
+        if (res.ok) {
+          const data = await res.json();
+          const orders = data.orders || [];
+          setRecentOrders(orders);
+
+          // Calculate dashboard stats
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const todayOrders = orders.filter(o => new Date(o.createdAt) >= today);
+          const allRes = await fetch(`${API_BASE}/payments/admin/all-orders?limit=1000`);
+          let allOrds = [];
+          if (allRes.ok) {
+            const allData = await allRes.json();
+            allOrds = allData.orders || [];
+            setAllOrdersList(allOrds);
+          }
+          const todayRevenue = allOrds.filter(o => new Date(o.createdAt) >= today && o.paymentStatus === 'Completed').reduce((s, o) => s + (o.grandTotal || 0), 0);
+          const pendingOrds = allOrds.filter(o => o.orderStatus === 'Pending Payment' || o.orderStatus === 'Confirmed' || o.orderStatus === 'Processing' || o.orderStatus === 'Packed');
+          const uniqueUsers = new Set(allOrds.map(o => o.user?._id || o.user));
+          setDashStats({
+            todayOrders: allOrds.filter(o => new Date(o.createdAt) >= today).length,
+            revenueToday: todayRevenue,
+            pendingOrders: pendingOrds.length,
+            totalCustomers: uniqueUsers.size,
+            lowStockCount: 0
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch dashboard orders:', err);
+      }
+    };
+
     fetchProducts();
     fetchCategories();
     fetchFestivals();
     fetchNotifications();
+    fetchDashboardOrders();
   }, []);
+
+  const handleUpdateTracking = async () => {
+    if (!selectedOrderForTracking) return;
+    setTrackingLoading(true);
+    try {
+      const res = await fetch(`${API_BASE}/payments/admin/orders/${selectedOrderForTracking._id}/tracking`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(trackingForm)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Update order in allOrdersList
+        setAllOrdersList(prev => prev.map(o => o._id === data.order._id ? { ...o, orderStatus: data.order.orderStatus, timeline: data.order.timeline } : o));
+        setRecentOrders(prev => prev.map(o => o._id === data.order._id ? { ...o, orderStatus: data.order.orderStatus, timeline: data.order.timeline } : o));
+        setSelectedOrderForTracking(prev => ({ ...prev, orderStatus: data.order.orderStatus, timeline: data.order.timeline }));
+        setTrackingForm({ orderStatus: data.order.orderStatus, note: '' });
+      } else {
+        alert('Failed to update order tracking.');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Error updating tracking.');
+    } finally {
+      setTrackingLoading(false);
+    }
+  };
 
   const handleNotifClick = async () => {
     setIsNotifOpen(!isNotifOpen);
@@ -860,33 +933,33 @@ const AdminDashboard = () => {
             <>
               {/* Top Metrics Row */}
           <div className="admin-metrics-grid">
-            <div className="admin-card admin-metric-card">
+            <div className="admin-card admin-metric-card" style={{ cursor: 'pointer' }} onClick={() => { setIsOrdersModalOpen(true); setOrdersModalFilter('All'); }}>
               <div className="admin-card-title">Today's Orders</div>
-              <div className="admin-metric-value">0</div>
-              <div className="admin-metric-trend trend-neutral">0% from yesterday</div>
+              <div className="admin-metric-value">{dashStats.todayOrders}</div>
+              <div className="admin-metric-trend trend-neutral">Click to view orders</div>
             </div>
             
             <div className="admin-card admin-metric-card">
               <div className="admin-card-title">Revenue Today</div>
-              <div className="admin-metric-value">₹0</div>
-              <div className="admin-metric-trend trend-neutral">0% from yesterday</div>
+              <div className="admin-metric-value">₹{dashStats.revenueToday.toFixed(2)}</div>
+              <div className="admin-metric-trend trend-neutral">Live revenue</div>
             </div>
 
-            <div className="admin-card admin-metric-card">
+            <div className="admin-card admin-metric-card" style={{ cursor: 'pointer' }} onClick={() => { setIsOrdersModalOpen(true); setOrdersModalFilter('Processing'); }}>
               <div className="admin-card-title">Pending Orders</div>
-              <div className="admin-metric-value">0</div>
-              <div className="admin-metric-trend trend-neutral">View all pending</div>
+              <div className="admin-metric-value">{dashStats.pendingOrders}</div>
+              <div className="admin-metric-trend trend-neutral" style={{ cursor: 'pointer', color: '#f43f5e' }}>View all pending</div>
             </div>
 
             <div className="admin-card admin-metric-card">
               <div className="admin-card-title">Customers</div>
-              <div className="admin-metric-value">0</div>
-              <div className="admin-metric-trend trend-neutral">0% this month</div>
+              <div className="admin-metric-value">{dashStats.totalCustomers}</div>
+              <div className="admin-metric-trend trend-neutral">Unique buyers</div>
             </div>
 
             <div className="admin-card admin-metric-card">
               <div className="admin-card-title">Low Stock Alerts</div>
-              <div className="admin-metric-value">0</div>
+              <div className="admin-metric-value">{dashStats.lowStockCount}</div>
               <div className="admin-metric-trend trend-down">View all alerts</div>
             </div>
           </div>
@@ -945,7 +1018,7 @@ const AdminDashboard = () => {
             <div className="admin-card">
               <div className="admin-card-header">
                 <div className="admin-card-title">Recent Orders</div>
-                <span className="view-all-link">View All Orders</span>
+                <span className="view-all-link" style={{ cursor: 'pointer' }} onClick={() => setIsOrdersModalOpen(true)}>View All Orders</span>
               </div>
               <table className="admin-table">
                 <thead>
@@ -962,29 +1035,43 @@ const AdminDashboard = () => {
                 <tbody>
                   {recentOrders.length === 0 && (
                     <tr>
-                      <td colSpan="7" style={{ textAlign: 'center', color: '#94a3b8' }}>No recent orders</td>
+                      <td colSpan="7" style={{ textAlign: 'center', color: '#94a3b8', padding: '2rem 0' }}>No recent orders</td>
                     </tr>
                   )}
-                  {recentOrders.map((order, idx) => (
-                    <tr key={idx}>
-                      <td style={{ fontWeight: 600 }}>{order.id}</td>
-                      <td>
-                        <div className="admin-avatar-cell">
-                          <img src={`https://i.pravatar.cc/150?u=${idx}`} alt={order.name} />
-                          {order.name}
-                        </div>
-                      </td>
-                      <td>{order.items} items</td>
-                      <td style={{ fontWeight: 600 }}>{order.amt}</td>
-                      <td>
-                        <span className="admin-status-pill" style={{ color: order.color, background: order.bg }}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td>{order.date}</td>
-                      <td style={{ textAlign: 'right', color: '#94a3b8', cursor: 'pointer' }}>⋮</td>
-                    </tr>
-                  ))}
+                  {recentOrders.map((order, idx) => {
+                    const customerName = order.contactInformation?.fullName || (order.user ? `${order.user.firstName || ''} ${order.user.lastName || ''}`.trim() : 'Unknown');
+                    const statusColors = {
+                      'Pending Payment': { color: '#92400e', bg: '#fef3c7' },
+                      'Confirmed': { color: '#1e40af', bg: '#dbeafe' },
+                      'Processing': { color: '#6b21a8', bg: '#f3e8ff' },
+                      'Packed': { color: '#0f5f5f', bg: '#ccfbf1' },
+                      'Shipped': { color: '#1d4ed8', bg: '#eff6ff' },
+                      'Delivered': { color: '#15803d', bg: '#dcfce7' },
+                      'Cancelled': { color: '#dc2626', bg: '#fee2e2' },
+                      'Returned': { color: '#9f1239', bg: '#ffe4e6' }
+                    };
+                    const sc = statusColors[order.orderStatus] || { color: '#64748b', bg: '#f1f5f9' };
+                    return (
+                      <tr key={order._id || idx} style={{ cursor: 'pointer' }} onClick={() => { setSelectedOrderForTracking(order); setTrackingForm({ orderStatus: order.orderStatus, note: '' }); }}>
+                        <td style={{ fontWeight: 600, fontSize: '0.75rem' }}>#{order.orderNumber}</td>
+                        <td>
+                          <div className="admin-avatar-cell">
+                            <img src={`https://i.pravatar.cc/150?u=${order._id}`} alt={customerName} />
+                            <span style={{ fontSize: '0.8rem' }}>{customerName || 'N/A'}</span>
+                          </div>
+                        </td>
+                        <td style={{ fontSize: '0.8rem' }}>{order.items?.length || 0} item(s)</td>
+                        <td style={{ fontWeight: 600, fontSize: '0.8rem' }}>₹{order.grandTotal?.toFixed(2)}</td>
+                        <td>
+                          <span className="admin-status-pill" style={{ color: sc.color, background: sc.bg }}>{order.orderStatus}</span>
+                        </td>
+                        <td style={{ fontSize: '0.75rem', color: '#64748b' }}>{new Date(order.createdAt).toLocaleDateString('en-IN')}</td>
+                        <td style={{ textAlign: 'right', color: '#94a3b8', cursor: 'pointer' }}>
+                          <button onClick={(e) => { e.stopPropagation(); setSelectedOrderForTracking(order); setTrackingForm({ orderStatus: order.orderStatus, note: '' }); }} style={{ background: '#f43f5e', color: 'white', border: 'none', borderRadius: '4px', padding: '0.25rem 0.5rem', fontSize: '0.7rem', cursor: 'pointer' }}>Update</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1950,6 +2037,152 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+
+      {/* ====== VIEW ALL ORDERS MODAL ====== */}
+      {isOrdersModalOpen && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}>
+          <div style={{ background: 'white', borderRadius: '16px', width: '100%', maxWidth: '1100px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px rgba(0,0,0,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1.5rem 2rem', borderBottom: '1px solid #e2e8f0' }}>
+              <div>
+                <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: '#0f172a' }}>All Orders</h2>
+                <p style={{ margin: '0.25rem 0 0', fontSize: '0.85rem', color: '#64748b' }}>{allOrdersList.length} total orders</p>
+              </div>
+              <button onClick={() => setIsOrdersModalOpen(false)} style={{ background: '#f1f5f9', border: 'none', borderRadius: '50%', width: '36px', height: '36px', cursor: 'pointer', color: '#64748b' }}>X</button>
+            </div>
+            <div style={{ display: 'flex', gap: '0.75rem', padding: '1rem 2rem', borderBottom: '1px solid #f1f5f9', flexWrap: 'wrap', alignItems: 'center' }}>
+              <input type="text" placeholder="Search by order ID, customer..." value={ordersModalSearch} onChange={e => setOrdersModalSearch(e.target.value)} style={{ flex: 1, minWidth: '200px', padding: '0.5rem 1rem', border: '1px solid #e2e8f0', borderRadius: '8px', fontSize: '0.875rem', outline: 'none' }} />
+              {['All', 'Pending Payment', 'Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered', 'Cancelled'].map(s => (
+                <button key={s} onClick={() => setOrdersModalFilter(s)} style={{ padding: '0.4rem 1rem', borderRadius: '99px', border: '1px solid', borderColor: ordersModalFilter === s ? '#e11d48' : '#e2e8f0', background: ordersModalFilter === s ? '#e11d48' : 'white', color: ordersModalFilter === s ? 'white' : '#64748b', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}>{s}</button>
+              ))}
+            </div>
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                <thead style={{ position: 'sticky', top: 0, background: '#f8fafc', zIndex: 1 }}>
+                  <tr>{['Order ID','Customer','Email','Items','Amount','Status','Date','Action'].map(h => (
+                    <th key={h} style={{ padding: '0.75rem 1rem', textAlign: 'left', fontWeight: 600, color: '#64748b', fontSize: '0.75rem', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap' }}>{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {allOrdersList.filter(o => {
+                    const fOk = ordersModalFilter === 'All' || o.orderStatus === ordersModalFilter;
+                    const s = ordersModalSearch.toLowerCase();
+                    const sOk = !s || o.orderNumber?.toLowerCase().includes(s) || o.contactInformation?.fullName?.toLowerCase().includes(s) || o.user?.email?.toLowerCase().includes(s) || ((o.user?.firstName||'') + ' ' + (o.user?.lastName||''))?.toLowerCase().includes(s);
+                    return fOk && sOk;
+                  }).map((order) => {
+                    const cn = order.contactInformation?.fullName || (order.user ? (`${order.user.firstName||''} ${order.user.lastName||''}`).trim() : 'Unknown');
+                    const ce = order.user?.email || order.contactInformation?.email || '-';
+                    const stC = { 'Pending Payment':{ c:'#92400e', b:'#fef3c7' }, 'Confirmed':{ c:'#1e40af', b:'#dbeafe' }, 'Processing':{ c:'#6b21a8', b:'#f3e8ff' }, 'Packed':{ c:'#0f5f5f', b:'#ccfbf1' }, 'Shipped':{ c:'#1d4ed8', b:'#eff6ff' }, 'Delivered':{ c:'#15803d', b:'#dcfce7' }, 'Cancelled':{ c:'#dc2626', b:'#fee2e2' }, 'Returned':{ c:'#9f1239', b:'#ffe4e6' } };
+                    const sc = stC[order.orderStatus] || { c:'#64748b', b:'#f1f5f9' };
+                    return (
+                      <tr key={order._id} style={{ borderBottom: '1px solid #f1f5f9' }} onMouseEnter={e => e.currentTarget.style.background='#fafafa'} onMouseLeave={e => e.currentTarget.style.background='transparent'}>
+                        <td style={{ padding:'0.85rem 1rem', fontWeight:600, color:'#0f172a', fontSize:'0.8rem' }}>#{order.orderNumber}</td>
+                        <td style={{ padding:'0.85rem 1rem' }}><div style={{ display:'flex', alignItems:'center', gap:'0.5rem' }}><img src={`https://i.pravatar.cc/40?u=${order._id}`} alt={cn} style={{ width:28, height:28, borderRadius:'50%', objectFit:'cover' }} /><span style={{ fontWeight:500, color:'#1e293b' }}>{cn}</span></div></td>
+                        <td style={{ padding:'0.85rem 1rem', color:'#64748b', fontSize:'0.78rem' }}>{ce}</td>
+                        <td style={{ padding:'0.85rem 1rem', color:'#64748b' }}>{order.items?.length||0}</td>
+                        <td style={{ padding:'0.85rem 1rem', fontWeight:600 }}>&#8377;{order.grandTotal?.toFixed(2)}</td>
+                        <td style={{ padding:'0.85rem 1rem' }}><span style={{ padding:'0.2rem 0.7rem', borderRadius:'99px', fontSize:'0.72rem', fontWeight:600, color:sc.c, background:sc.b }}>{order.orderStatus}</span></td>
+                        <td style={{ padding:'0.85rem 1rem', color:'#64748b', fontSize:'0.78rem', whiteSpace:'nowrap' }}>{new Date(order.createdAt).toLocaleDateString('en-IN')}</td>
+                        <td style={{ padding:'0.85rem 1rem' }}><button onClick={() => { setSelectedOrderForTracking(order); setTrackingForm({ orderStatus: order.orderStatus, note:'' }); }} style={{ background:'#e11d48', color:'white', border:'none', borderRadius:'6px', padding:'0.4rem 0.9rem', fontSize:'0.75rem', fontWeight:600, cursor:'pointer' }}>Manage</button></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ====== ORDER TRACKING / MANAGE PANEL ====== */}
+      {selectedOrderForTracking && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 1100, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>
+          <div style={{ background: 'white', width: '480px', height: '100vh', overflowY: 'auto', boxShadow: '-8px 0 30px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ padding: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', background: 'linear-gradient(135deg, #e11d48, #be123c)', color: 'white' }}>
+              <div>
+                <div style={{ fontSize: '0.75rem', opacity: 0.85, marginBottom: '0.25rem' }}>ORDER MANAGEMENT</div>
+                <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700 }}>#{selectedOrderForTracking.orderNumber}</h3>
+                <div style={{ fontSize: '0.8rem', opacity: 0.85, marginTop: '0.25rem' }}>{new Date(selectedOrderForTracking.createdAt).toLocaleString('en-IN')}</div>
+              </div>
+              <button onClick={() => setSelectedOrderForTracking(null)} style={{ background: 'rgba(255,255,255,0.2)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', color: 'white', fontSize: '1rem' }}>X</button>
+            </div>
+            <div style={{ padding: '1.5rem', flex: 1 }}>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>CUSTOMER DETAILS</div>
+                <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '1rem', fontSize: '0.85rem' }}>
+                  <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{selectedOrderForTracking.contactInformation?.fullName || (selectedOrderForTracking.user ? (`${selectedOrderForTracking.user.firstName||''} ${selectedOrderForTracking.user.lastName||''}`).trim() : 'Unknown')}</div>
+                  <div style={{ color: '#64748b' }}>{selectedOrderForTracking.user?.email || selectedOrderForTracking.contactInformation?.email || '-'}</div>
+                  <div style={{ color: '#64748b' }}>{selectedOrderForTracking.contactInformation?.mobileNumber || selectedOrderForTracking.user?.mobileNumber || '-'}</div>
+                </div>
+              </div>
+              {selectedOrderForTracking.shippingAddress && (
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>SHIPPING ADDRESS</div>
+                  <div style={{ background: '#f8fafc', borderRadius: '10px', padding: '1rem', fontSize: '0.85rem', color: '#64748b', lineHeight: 1.6 }}>
+                    {[selectedOrderForTracking.shippingAddress.houseNo, selectedOrderForTracking.shippingAddress.street, selectedOrderForTracking.shippingAddress.area, selectedOrderForTracking.shippingAddress.city, selectedOrderForTracking.shippingAddress.state, selectedOrderForTracking.shippingAddress.pincode].filter(Boolean).join(', ')}
+                    {selectedOrderForTracking.shippingAddress.landmark && <div>Landmark: {selectedOrderForTracking.shippingAddress.landmark}</div>}
+                  </div>
+                </div>
+              )}
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>ORDER ITEMS</div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {selectedOrderForTracking.items?.map((item, idx) => (
+                    <div key={idx} style={{ display:'flex', gap:'0.75rem', alignItems:'center', background:'#f8fafc', borderRadius:'8px', padding:'0.75rem' }}>
+                      {item.product?.images?.[0] ? (
+                        <img src={item.product.images[0]} alt={item.name} style={{ width:44, height:44, borderRadius:'6px', objectFit:'cover', flexShrink:0 }} />
+                      ) : (
+                        <div style={{ width:44, height:44, borderRadius:'6px', background:'#e2e8f0', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:'0.6rem', color:'#94a3b8' }}>IMG</div>
+                      )}
+                      <div style={{ flex:1, minWidth:0 }}>
+                        <div style={{ fontWeight:600, fontSize:'0.85rem', color:'#1e293b', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name||item.product?.name||'Product'}</div>
+                        <div style={{ fontSize:'0.75rem', color:'#64748b' }}>Qty: {item.quantity}{item.size ? ` | Size: ${item.size}` : ''}{item.color ? ` | ${item.color}` : ''}</div>
+                      </div>
+                      <div style={{ fontWeight:700, fontSize:'0.85rem', color:'#0f172a', whiteSpace:'nowrap' }}>&#8377;{((item.price||0)*(item.quantity||1)).toFixed(2)}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop:'0.75rem', padding:'0.75rem', background:'#fef2f2', borderRadius:'8px', display:'flex', justifyContent:'space-between', fontWeight:700 }}>
+                  <span style={{ color:'#64748b' }}>Grand Total</span>
+                  <span style={{ color:'#e11d48' }}>&#8377;{selectedOrderForTracking.grandTotal?.toFixed(2)}</span>
+                </div>
+              </div>
+              <div style={{ marginBottom: '1.5rem' }}>
+                <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>UPDATE ORDER STATUS</div>
+                <div style={{ display:'flex', flexDirection:'column', gap:'0.75rem' }}>
+                  <select value={trackingForm.orderStatus} onChange={e => setTrackingForm(p => ({ ...p, orderStatus: e.target.value }))} style={{ width:'100%', padding:'0.75rem 1rem', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'0.875rem', outline:'none', background:'white', fontFamily:'inherit', cursor:'pointer' }}>
+                    <option value="">-- Select Status --</option>
+                    {['Pending Payment','Confirmed','Processing','Packed','Shipped','Delivered','Cancelled','Returned'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <textarea placeholder="Add a note (e.g. tracking number, courier, remarks...)" value={trackingForm.note} onChange={e => setTrackingForm(p => ({ ...p, note: e.target.value }))} style={{ width:'100%', padding:'0.75rem 1rem', border:'1px solid #e2e8f0', borderRadius:'8px', fontSize:'0.875rem', outline:'none', resize:'vertical', minHeight:'80px', fontFamily:'inherit', boxSizing:'border-box' }} />
+                  <button onClick={handleUpdateTracking} disabled={trackingLoading || !trackingForm.orderStatus} style={{ padding:'0.85rem', background: trackingLoading||!trackingForm.orderStatus ? '#fca5a5' : '#e11d48', color:'white', border:'none', borderRadius:'8px', fontWeight:700, fontSize:'0.9rem', cursor: trackingLoading||!trackingForm.orderStatus ? 'not-allowed' : 'pointer' }}>
+                    {trackingLoading ? 'Updating...' : 'Update Tracking'}
+                  </button>
+                </div>
+              </div>
+              {selectedOrderForTracking.timeline && selectedOrderForTracking.timeline.length > 0 && (
+                <div>
+                  <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>ORDER TIMELINE</div>
+                  <div style={{ position:'relative', paddingLeft:'1.5rem' }}>
+                    {[...selectedOrderForTracking.timeline].reverse().map((step, idx) => (
+                      <div key={idx} style={{ position:'relative', marginBottom:'1rem' }}>
+                        <div style={{ position:'absolute', left:'-1.5rem', top:'4px', width:'10px', height:'10px', borderRadius:'50%', background: idx===0 ? '#e11d48' : '#cbd5e1', border:'2px solid white', boxShadow:'0 0 0 2px '+(idx===0 ? '#e11d48' : '#cbd5e1') }}></div>
+                        <div style={{ background:'#f8fafc', borderRadius:'8px', padding:'0.75rem' }}>
+                          <div style={{ fontWeight:600, fontSize:'0.85rem', color: idx===0 ? '#e11d48' : '#1e293b' }}>{step.status}</div>
+                          {step.note && <div style={{ fontSize:'0.78rem', color:'#64748b', marginTop:'0.2rem' }}>{step.note}</div>}
+                          <div style={{ fontSize:'0.72rem', color:'#94a3b8', marginTop:'0.25rem' }}>{step.timestamp ? new Date(step.timestamp).toLocaleString('en-IN') : ''}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

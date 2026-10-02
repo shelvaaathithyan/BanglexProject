@@ -20,6 +20,7 @@ const UserDashboard = () => {
   const [activeTab, setActiveTab] = useState('details');
   const [savedLooks, setSavedLooks] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [selectedOrder, setSelectedOrder] = useState(null);
   const [cartItems, setCartItems] = useState([]);
   const [showAddressForm, setShowAddressForm] = useState(false);
   const [addressForm, setAddressForm] = useState({
@@ -392,60 +393,178 @@ const UserDashboard = () => {
 
               {activeTab === 'orders' && (
                 <section className="orders-section">
-                  <h2 className="section-title">My Orders</h2>
-                  {orders.length === 0 ? (
-                    <div className="empty-orders">
-                      <p>You haven't placed any orders yet.</p>
-                      <button className="btn-shop-now" onClick={() => navigate('/home')}>Shop Now</button>
-                    </div>
-                  ) : (
-                    <div className="orders-list" style={{ marginTop: '1rem' }}>
-                      {orders.map(order => (
-                        <div key={order._id} className="order-card" style={{ border: '1px solid #e2e8f0', borderRadius: '8px', padding: '1rem', marginBottom: '1rem' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
-                            <div>
-                              <strong>Order #{order.orderNumber}</strong>
-                              <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>Placed on: {new Date(order.createdAt).toLocaleDateString()}</div>
-                            </div>
-                            <div style={{ textAlign: 'right' }}>
-                              <span style={{ 
-                                display: 'inline-block', 
-                                padding: '0.25rem 0.75rem', 
-                                borderRadius: '99px', 
-                                fontSize: '0.75rem', 
-                                fontWeight: 'bold',
-                                backgroundColor: order.paymentStatus === 'Completed' ? '#dcfce7' : '#fee2e2',
-                                color: order.paymentStatus === 'Completed' ? '#166534' : '#991b1b'
-                              }}>
-                                {order.paymentStatus}
-                              </span>
-                              <div style={{ fontWeight: 'bold', marginTop: '0.5rem' }}>₹{order.grandTotal.toFixed(2)}</div>
-                            </div>
+                  {selectedOrder ? (
+                    // Order detail / tracking view
+                    <div>
+                      <button
+                        onClick={() => setSelectedOrder(null)}
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: '#e11d48', fontWeight: 600, cursor: 'pointer', marginBottom: '1.5rem', fontSize: '0.9rem', padding: 0 }}
+                      >
+                        &#8592; Back to My Orders
+                      </button>
+
+                      {/* Order Header */}
+                      <div style={{ background: 'linear-gradient(135deg, #e11d48, #be123c)', borderRadius: '12px', padding: '1.5rem', color: 'white', marginBottom: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div>
+                            <div style={{ fontSize: '0.75rem', opacity: 0.85, marginBottom: '0.25rem' }}>ORDER NUMBER</div>
+                            <div style={{ fontWeight: 700, fontSize: '1.1rem' }}>#{selectedOrder.orderNumber}</div>
+                            <div style={{ fontSize: '0.85rem', opacity: 0.85, marginTop: '0.25rem' }}>Placed on {new Date(selectedOrder.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
                           </div>
-                          
-                          <div className="order-items">
-                            {order.items.map((item, idx) => (
-                              <div key={idx} style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
-                                {item.product && item.product.images && item.product.images[0] && (
-                                  <img src={item.product.images[0]} alt={item.product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
-                                )}
-                                <div>
-                                  <div style={{ fontWeight: '500' }}>{item.product ? item.product.name : 'Unknown Product'}</div>
-                                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.5rem' }}>Qty: {item.quantity} | Size: {item.size}</div>
-                                  {order.orderStatus === 'Delivered' && item.product && (
-                                    <OrderReviewButton 
-                                      productId={item.product._id} 
-                                      orderId={order._id} 
-                                      productName={item.product.name} 
-                                      onOpenModal={openReviewModal} 
-                                    />
-                                  )}
+                          <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '0.75rem', opacity: 0.85, marginBottom: '0.25rem' }}>TOTAL AMOUNT</div>
+                            <div style={{ fontWeight: 700, fontSize: '1.25rem' }}>&#8377;{selectedOrder.grandTotal?.toFixed(2)}</div>
+                            <span style={{ display: 'inline-block', marginTop: '0.25rem', padding: '0.2rem 0.75rem', borderRadius: '99px', background: 'rgba(255,255,255,0.2)', fontSize: '0.78rem', fontWeight: 600 }}>{selectedOrder.paymentStatus}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Order Status + Timeline */}
+                      <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                        <h3 style={{ margin: '0 0 1.25rem', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Delivery Tracking</h3>
+
+                        {/* Status steps bar */}
+                        {(() => {
+                          const allSteps = ['Confirmed', 'Processing', 'Packed', 'Shipped', 'Delivered'];
+                          const currentIdx = allSteps.indexOf(selectedOrder.orderStatus);
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '1.5rem', overflowX: 'auto', gap: 0 }}>
+                              {allSteps.map((step, idx) => {
+                                const done = currentIdx >= idx;
+                                const active = currentIdx === idx;
+                                return (
+                                  <React.Fragment key={step}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', minWidth: '60px' }}>
+                                      <div style={{ width: '28px', height: '28px', borderRadius: '50%', background: done ? '#e11d48' : '#e2e8f0', border: active ? '3px solid #e11d48' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.3s' }}>
+                                        {done ? <span style={{ color: 'white', fontSize: '0.75rem', fontWeight: 700 }}>&#10003;</span> : <span style={{ background: '#cbd5e1', width: '8px', height: '8px', borderRadius: '50%', display: 'block' }}></span>}
+                                      </div>
+                                      <div style={{ fontSize: '0.65rem', color: done ? '#e11d48' : '#94a3b8', fontWeight: done ? 600 : 400, marginTop: '0.4rem', textAlign: 'center', lineHeight: 1.3 }}>{step}</div>
+                                    </div>
+                                    {idx < allSteps.length - 1 && (
+                                      <div style={{ flex: 1, height: '2px', background: currentIdx > idx ? '#e11d48' : '#e2e8f0', minWidth: '20px', transition: 'background 0.3s' }}></div>
+                                    )}
+                                  </React.Fragment>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Current status badge */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '1rem', background: '#fef2f2', borderRadius: '8px', marginBottom: '1rem' }}>
+                          <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e11d48', flexShrink: 0 }}></div>
+                          <div>
+                            <div style={{ fontWeight: 700, color: '#e11d48', fontSize: '0.95rem' }}>Current Status: {selectedOrder.orderStatus}</div>
+                            {selectedOrder.orderStatus === 'Cancelled' && <div style={{ fontSize: '0.8rem', color: '#64748b', marginTop: '0.2rem' }}>This order has been cancelled.</div>}
+                          </div>
+                        </div>
+
+                        {/* Timeline */}
+                        {selectedOrder.timeline && selectedOrder.timeline.length > 0 && (
+                          <div style={{ position: 'relative', paddingLeft: '1.5rem', marginTop: '1rem' }}>
+                            <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.08em', marginBottom: '0.75rem' }}>FULL TIMELINE</div>
+                            {[...selectedOrder.timeline].reverse().map((step, idx) => (
+                              <div key={idx} style={{ position: 'relative', marginBottom: '1rem' }}>
+                                <div style={{ position: 'absolute', left: '-1.5rem', top: '4px', width: '10px', height: '10px', borderRadius: '50%', background: idx === 0 ? '#e11d48' : '#cbd5e1', border: '2px solid white', boxShadow: '0 0 0 2px ' + (idx === 0 ? '#e11d48' : '#cbd5e1') }}></div>
+                                <div style={{ background: '#f8fafc', borderRadius: '8px', padding: '0.75rem' }}>
+                                  <div style={{ fontWeight: 600, fontSize: '0.85rem', color: idx === 0 ? '#e11d48' : '#1e293b' }}>{step.status}</div>
+                                  {step.note && <div style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.2rem' }}>{step.note}</div>}
+                                  <div style={{ fontSize: '0.72rem', color: '#94a3b8', marginTop: '0.25rem' }}>{step.timestamp ? new Date(step.timestamp).toLocaleString('en-IN') : ''}</div>
                                 </div>
                               </div>
                             ))}
                           </div>
+                        )}
+                      </div>
+
+                      {/* Order Items */}
+                      <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                        <h3 style={{ margin: '0 0 1rem', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Order Items</h3>
+                        {selectedOrder.items?.map((item, idx) => (
+                          <div key={idx} style={{ display: 'flex', gap: '1rem', paddingBottom: '1rem', marginBottom: idx < selectedOrder.items.length - 1 ? '1rem' : 0, borderBottom: idx < selectedOrder.items.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                            {item.product?.images?.[0] ? (
+                              <img src={item.product.images[0]} alt={item.name} style={{ width: 60, height: 60, borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
+                            ) : (
+                              <div style={{ width: 60, height: 60, borderRadius: '8px', background: '#f1f5f9', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.6rem', color: '#94a3b8' }}>No IMG</div>
+                            )}
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, color: '#1e293b' }}>{item.name || item.product?.name || 'Product'}</div>
+                              <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.2rem' }}>Qty: {item.quantity}{item.size ? ` | Size: ${item.size}` : ''}{item.color ? ` | ${item.color}` : ''}</div>
+                              {selectedOrder.orderStatus === 'Delivered' && item.product && (
+                                <OrderReviewButton productId={item.product._id} orderId={selectedOrder._id} productName={item.product.name} onOpenModal={openReviewModal} />
+                              )}
+                            </div>
+                            <div style={{ fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap' }}>&#8377;{((item.price || 0) * (item.quantity || 1)).toFixed(2)}</div>
+                          </div>
+                        ))}
+                        <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', fontWeight: 700, fontSize: '1rem' }}>
+                          <span>Grand Total</span>
+                          <span style={{ color: '#e11d48' }}>&#8377;{selectedOrder.grandTotal?.toFixed(2)}</span>
                         </div>
-                      ))}
+                      </div>
+
+                      {/* Shipping Address */}
+                      {selectedOrder.shippingAddress && (
+                        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1.5rem' }}>
+                          <h3 style={{ margin: '0 0 0.75rem', fontSize: '1rem', fontWeight: 700, color: '#0f172a' }}>Shipping Address</h3>
+                          <div style={{ fontSize: '0.9rem', color: '#64748b', lineHeight: 1.7 }}>
+                            {[selectedOrder.shippingAddress.houseNo, selectedOrder.shippingAddress.street, selectedOrder.shippingAddress.area, selectedOrder.shippingAddress.city, selectedOrder.shippingAddress.state, selectedOrder.shippingAddress.pincode].filter(Boolean).join(', ')}
+                            {selectedOrder.shippingAddress.landmark && <div>Landmark: {selectedOrder.shippingAddress.landmark}</div>}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    // Orders list view
+                    <div>
+                      <h2 className="section-title">My Orders</h2>
+                      {orders.length === 0 ? (
+                        <div className="empty-orders">
+                          <p>You haven't placed any orders yet.</p>
+                          <button className="btn-shop-now" onClick={() => navigate('/home')}>Shop Now</button>
+                        </div>
+                      ) : (
+                        <div className="orders-list" style={{ marginTop: '1rem' }}>
+                          {orders.map(order => (
+                            <div
+                              key={order._id}
+                              className="order-card"
+                              onClick={() => setSelectedOrder(order)}
+                              style={{ border: '1px solid #e2e8f0', borderRadius: '12px', padding: '1rem', marginBottom: '1rem', cursor: 'pointer', transition: 'box-shadow 0.2s, border-color 0.2s' }}
+                              onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 4px 16px rgba(225,29,72,0.08)'; e.currentTarget.style.borderColor = '#fda4af'; }}
+                              onMouseLeave={e => { e.currentTarget.style.boxShadow = 'none'; e.currentTarget.style.borderColor = '#e2e8f0'; }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid #f1f5f9', paddingBottom: '0.5rem', marginBottom: '1rem' }}>
+                                <div>
+                                  <strong>Order #{order.orderNumber}</strong>
+                                  <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>Placed on: {new Date(order.createdAt).toLocaleDateString()}</div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                  <span style={{ display: 'inline-block', padding: '0.25rem 0.75rem', borderRadius: '99px', fontSize: '0.75rem', fontWeight: 'bold', backgroundColor: order.paymentStatus === 'Completed' ? '#dcfce7' : '#fee2e2', color: order.paymentStatus === 'Completed' ? '#166534' : '#991b1b' }}>{order.paymentStatus}</span>
+                                  <div style={{ fontWeight: 'bold', marginTop: '0.5rem' }}>&#8377;{order.grandTotal?.toFixed(2)}</div>
+                                </div>
+                              </div>
+                              <div className="order-items">
+                                {order.items.map((item, idx) => (
+                                  <div key={idx} style={{ display: 'flex', gap: '1rem', marginBottom: '0.75rem' }}>
+                                    {item.product && item.product.images && item.product.images[0] && (
+                                      <img src={item.product.images[0]} alt={item.product.name} style={{ width: '50px', height: '50px', objectFit: 'cover', borderRadius: '4px' }} />
+                                    )}
+                                    <div>
+                                      <div style={{ fontWeight: '500' }}>{item.product ? item.product.name : 'Unknown Product'}</div>
+                                      <div style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '0.5rem' }}>Qty: {item.quantity} | Size: {item.size}</div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid #f1f5f9' }}>
+                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>Status: <strong style={{ color: '#1e293b' }}>{order.orderStatus}</strong></span>
+                                <span style={{ fontSize: '0.8rem', color: '#e11d48', fontWeight: 600 }}>View Details &#8594;</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   )}
                 </section>

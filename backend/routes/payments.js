@@ -96,6 +96,60 @@ router.get('/my-orders', async (req, res) => {
   }
 });
 
+// GET /api/payments/admin/all-orders  — Admin: get all orders with customer details
+router.get('/admin/all-orders', async (req, res) => {
+  try {
+    const { page = 1, limit = 50, status, search } = req.query;
+    const query = {};
+    if (status && status !== 'All') query.orderStatus = status;
+
+    let orders = await Order.find(query)
+      .populate('user', 'firstName lastName email mobileNumber')
+      .populate('items.product', 'name images price salePrice')
+      .sort({ createdAt: -1 });
+
+    if (search) {
+      const s = search.toLowerCase();
+      orders = orders.filter(o =>
+        o.orderNumber?.toLowerCase().includes(s) ||
+        o.user?.email?.toLowerCase().includes(s) ||
+        o.user?.firstName?.toLowerCase().includes(s) ||
+        o.user?.lastName?.toLowerCase().includes(s) ||
+        o.contactInformation?.fullName?.toLowerCase().includes(s)
+      );
+    }
+
+    const total = orders.length;
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const paginated = orders.slice(skip, skip + parseInt(limit));
+    res.json({ orders: paginated, total, page: parseInt(page), totalPages: Math.ceil(total / parseInt(limit)) });
+  } catch (err) {
+    console.error('Admin All Orders Error:', err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// PUT /api/payments/admin/orders/:id/tracking  — Admin: update order status & tracking note
+router.put('/admin/orders/:id/tracking', async (req, res) => {
+  try {
+    const { orderStatus, note } = req.body;
+    const order = await Order.findById(req.params.id);
+    if (!order) return res.status(404).json({ message: 'Order not found' });
+
+    if (orderStatus) order.orderStatus = orderStatus;
+    order.timeline.push({
+      status: orderStatus || order.orderStatus,
+      note: note || `Status updated to ${orderStatus || order.orderStatus}`,
+      timestamp: new Date()
+    });
+    await order.save();
+    res.json({ success: true, order });
+  } catch (err) {
+    console.error('Admin Update Order Tracking Error:', err);
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
 // POST /api/payments/create-order
 router.post('/create-order', async (req, res) => {
   const session = await mongoose.startSession();
