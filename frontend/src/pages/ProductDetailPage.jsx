@@ -332,13 +332,7 @@ const ProductDetailPage = () => {
                 })()}
               </div>
  
-             <div className="product-ratings">
-               <div className="stars">
-                 {[1,2,3,4,5].map(i => <Star key={i} size={16} fill="#f59e0b" color="#f59e0b" />)}
-               </div>
-               <span className="rating-score">4.9</span>
-               <span className="review-count">(128 Reviews)</span>
-             </div>
+
  
              <p className="product-description">
                {product.description || 'Hand-painted traditional terracotta bangles with floral clay motifs. Light weight and perfect for everyday grace.'}
