@@ -330,12 +330,7 @@ const CategoryPage = () => {
                       }
                     })()}
                   </div>
-                  <div className="product-card-ratings">
-                    <div className="stars">
-                      {[1,2,3,4,5].map(i => <Star key={i} size={12} fill="#f59e0b" color="#f59e0b" />)}
-                    </div>
-                    <span className="review-count" style={{ fontSize: '0.75rem', color: '#6b7280' }}>(112)</span>
-                  </div>
+
                   <div className="product-card-actions">
                     <button className="btn-card btn-card-outline" onClick={(e) => handleAddToCart(e, product)}>Add to Cart</button>
                     <button className="btn-card btn-card-outline" onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}>Shop Now</button>

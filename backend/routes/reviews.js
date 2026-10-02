@@ -19,7 +19,7 @@ const protect = (req, res, next) => {
 
 const adminAuth = (req, res, next) => {
   protect(req, res, () => {
-    if (req.user.email && req.user.email.toLowerCase() === 'banglexproject@gmail.com') {
+    if (req.user.role === 'admin' || (req.user.email && req.user.email.toLowerCase() === 'banglexproject@gmail.com')) {
       next();
     } else {
       res.status(403).json({ message: 'Admin access required' });
